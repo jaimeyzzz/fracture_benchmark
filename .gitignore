@@ -1,3 +1,7 @@
 __pycache__
+.DS_Store
+backup
 output
+
 *.mp4
+*.npz
