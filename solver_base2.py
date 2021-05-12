@@ -73,13 +73,6 @@ class SolverBase2:
         self.bondsAccum.from_numpy(self.inclusive)
         self.bondsIdx.from_numpy(self.indices)
 
-        # init bonds
-        self.initBonds()
-    
-    @ti.kernel
-    def initBonds(self):
-        raise NotImplementedError
-
     @ti.kernel
     def computeNeighbors(self):
         for i in self.position:

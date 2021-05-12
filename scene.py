@@ -26,6 +26,7 @@ class Scene:
         self.lowerBound = np.float32([-0.5, -0.5])
         self.upperBound = np.float32([0.5, 0.5])
         self.gravity = np.float32([0.0, -9.81])
+        # self.gravity = np.float32([0.0, 0.0])
 
         self.npzFile = os.path.join(path, name, '{}.npz'.format(name))
         self.importYaml(os.path.join(path, name, '{}.yaml'.format(name)))
@@ -42,6 +43,8 @@ class Scene:
         with open(yamlFilePath, 'r') as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
 
+        self.cfl = data['cfl']
+        self.fps = data['fps']
         self.gammac = data['dampingRatio']
         self.rho = data['density']
         # bond

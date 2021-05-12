@@ -7,9 +7,19 @@ from scene import Scene
 
 SCENE_FOLDER = 'scene2'
 SCENE_NAME = sys.argv[1]
+SOLVER_NAME = sys.argv[2]
 
 # INIT SCENE
 scene = Scene(SCENE_FOLDER, SCENE_NAME)
+
+if SOLVER_NAME == 'bdem':
+    scene.h = scene.r * 2.01
+elif SOLVER_NAME == 'dem':
+    pass
+elif SOLVER_NAME == 'mass_spring':
+    scene.h = scene.r * 3.01
+elif SOLVER_NAME == 'peridynamics':
+    scene.h = scene.r * 6.01
 
 N = scene.N
 bondsNum = ti.field(ti.i32)
@@ -65,3 +75,15 @@ for i in range(N):
         idx = j - inclusive[i]
         indices[j] = npBondsIdx[i][idx]
 np.savez_compressed(filepath, inclusive=inclusive, indices=indices)
+
+# EIGENS
+from scipy.sparse import csr_matrix
+from scipy.sparse import csgraph
+from scipy.sparse.linalg import eigs
+
+data = np.ones(indices.shape)
+G = csr_matrix((data,indices,inclusive),shape=(N,N))
+L = csgraph.laplacian(G)
+
+vals, vecs = eigs(L, k=6)
+print(vals)

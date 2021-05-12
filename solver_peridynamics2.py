@@ -17,6 +17,7 @@ class SolverPeridynamics2(SolverBase2):
 
     def init(self):
         super().init()
+        self.initBonds()
    
     @ti.kernel
     def initBonds(self):
