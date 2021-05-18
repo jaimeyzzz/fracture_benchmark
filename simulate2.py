@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import sys
 import taichi as ti
 import time
@@ -22,10 +23,16 @@ M = 6
 WINDOW_SIZE = 640
 
 scene = Scene(SCENE_FOLDER, SCENE_NAME)
+outputDir = 'output/images/{}_{}2/'.format(SCENE_NAME, SOLVER_NAME)
+try:
+    os.mkdir(outputDir)
+except OSError as error:
+    print(error)   
 
 neighborSearch = NeighborSearch2(scene.lowerBound, scene.upperBound, scene.r * 2.0)
 solver = None
 if SOLVER_NAME == 'bdem':
+    scene.cfl *= 0.5
     solver = SolverBdem2(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
     solver = SolverDem2(scene, neighborSearch)
@@ -37,6 +44,8 @@ elif SOLVER_NAME == 'peridynamics':
     solver = SolverPeridynamics2(scene, neighborSearch)
     M = 42
 elif SOLVER_NAME == 'mpm':
+    scene.cfl *= 1.0
+    scene.fps = 60.0
     solver = SolverMpm2(scene, neighborSearch)
     
 # TAICHI MATERIALIZE
@@ -54,6 +63,8 @@ dt = 1 / scene.fps / float(s)
 
 npLoad = np.float32([])
 npTime = np.float32([])
+
+
 
 frameIdx = 0
 while gui.running and frameIdx < NUM_FRAMES:
@@ -90,6 +101,6 @@ while gui.running and frameIdx < NUM_FRAMES:
     # npEnd = npEnd.reshape((-1, 2))
     # gui.lines(npBegin, npEnd, color=0x000)
     frameIdx += 1
-    gui.show(f'output/images/{frameIdx:04d}.jpg')
+    gui.show(outputDir+f'{frameIdx:04d}.jpg')
 
 np.savez('output/{}_{}2.npz'.format(SCENE_NAME, SOLVER_NAME), load=npLoad, time=npTime)

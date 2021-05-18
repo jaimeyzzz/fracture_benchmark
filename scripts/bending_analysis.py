@@ -5,7 +5,7 @@ plt.style.use('ggplot')
 
 sceneNames = ['bending', 'bending_fine']
 solverNames = ['bdem2']
-# solverNames = ['mass_spring2', 'bdem2', 'peridynamics2', 'mpm2']
+solverNames = ['mass_spring2', 'bdem2', 'peridynamics2', 'mpm2']
 # solverNames = ['peridynamics2']
 
 def plotAll():
@@ -27,8 +27,10 @@ def plotAll():
 def plotSolver():
     for solverName in solverNames:
         for sceneName in sceneNames:
-            # try:
-            data = np.load('output/{}_{}.npz'.format(sceneName, solverName))
+            try:
+                data = np.load('output/{}_{}.npz'.format(sceneName, solverName))
+            except:
+                pass
             t = data['time']
             f = data['load']
             if solverName == 'bdem2' and sceneName == 'bending_fine':
@@ -36,8 +38,7 @@ def plotSolver():
                 for i in range(f.shape[0]):
                     f[i] = f[i] * max(float(i) / 0.6 / f.shape[0], 1.0)
             plt.plot(t, f, label='{}_{}'.format(sceneName,solverName))
-            # except:
-                # pass
+
         plt.legend()
         plt.xlabel('$\delta$ / cm')
         plt.ylabel('$F$ / N')

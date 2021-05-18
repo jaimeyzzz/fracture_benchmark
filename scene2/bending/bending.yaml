@@ -6,8 +6,8 @@ fps: 60.0
 bondRange: 2.01
 bondNormalStiffness: 1.0e+7
 bondTangentialStiffness: 1.0e+7
-bondNormalStrength: 0.1
-bondTangentialStrength: 0.1
+bondNormalStrength: 0.2
+bondTangentialStrength: 0.2
 # collision
 frictionCoefficient: 0.7
 collisionStiffness: 1.e+7

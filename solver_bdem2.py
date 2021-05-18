@@ -14,6 +14,8 @@ class SolverBdem2(SolverBase2):
         self.gammac = scene.gammac
         self.us = scene.us
         self.h = scene.h
+        self.sigmac = scene.sigma
+        self.tauc = scene.tau
 
         self.momentOfInertia = ti.field(ti.f32)
         self.rotation = ti.field(ti.f32)
@@ -60,8 +62,8 @@ class SolverBdem2(SolverBase2):
                     self.bondsState[k] = self.scene.BOND_VALID
                     self.bondsLength[k] = dxNorm
                     self.bondsDirection[k] = dx / dxNorm
-                    self.bondsSigma[k] = self.kn * 0.1
-                    self.bondsTao[k] = self.kt * 0.1
+                    self.bondsSigma[k] = self.kn * self.sigmac
+                    self.bondsTao[k] = self.kt * self.tauc
 
     @ti.kernel
     def computeCollision(self, dt:ti.f32):

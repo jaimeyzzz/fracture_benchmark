@@ -52,7 +52,7 @@ class Scene:
         self.kn = data['bondNormalStiffness']
         self.kt = data['bondTangentialStiffness']
         self.sigma = data['bondNormalStrength']
-        self.tao = data['bondTangentialStrength']
+        self.tau = data['bondTangentialStrength']
         # collision
         self.kc = data['collisionStiffness']
         self.us = data['frictionCoefficient']

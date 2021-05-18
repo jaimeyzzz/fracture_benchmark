@@ -14,6 +14,7 @@ class SolverPeridynamics2(SolverBase2):
         self.gammac = scene.gammac
         self.us = scene.us
         self.h = scene.h
+        self.sigmac = scene.sigma
 
     def init(self):
         super().init()
@@ -114,7 +115,7 @@ class SolverPeridynamics2(SolverBase2):
                     n = dx / l
                     fn = -self.kn * (l / l0 - 1.0) * n
                     tao = fn.norm()
-                    if l / l0 - 1.0 > 0.1:
+                    if l / l0 - 1.0 > self.sigmac:
                         self.bondsState[idx] = self.scene.BOND_BROKEN
                     f += fn                   
                 self.force[i] += f
