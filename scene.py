@@ -23,9 +23,9 @@ class Scene:
         self.velocity = np.array([], dtype=float)
         self.color = np.array([], dtype=float)
 
-        self.lowerBound = np.float32([-0.5, -0.5])
-        self.upperBound = np.float32([0.5, 0.5])
-        self.gravity = np.float32([0.0, -9.81])
+        self.lowerBound = np.float32([-0.5, -0.5, -0.5])
+        self.upperBound = np.float32([0.5, 0.5, 0.5])
+        self.gravity = np.float32([0.0, -9.81, 0.0])
         # self.gravity = np.float32([0.0, 0.0])
 
         self.npzFile = os.path.join(path, name, '{}.npz'.format(name))
@@ -86,4 +86,4 @@ class Scene:
         self.color = np.transpose(np.array([r, g, b]), axes=[1, 0])
         self.velocity = self.plyLoadAttributes(vertexData, 'velocity', 3)
 
-scene = Scene('scene2', 'bending')
+# scene = Scene('scene3', 'bending')

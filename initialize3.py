@@ -2,10 +2,10 @@ import numpy as np
 import sys
 import taichi as ti
 
-from neighbor_search2 import NeighborSearch2
+from neighbor_search3 import NeighborSearch3
 from scene import Scene
 
-SCENE_FOLDER = 'scene2'
+SCENE_FOLDER = 'scene3'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
 
@@ -25,12 +25,12 @@ N = scene.N
 bondsNum = ti.field(ti.i32)
 bondsIdx = ti.field(ti.i32)
 label = ti.field(ti.f32)
-position = ti.Vector.field(2, ti.f32)
+position = ti.Vector.field(3, ti.f32)
 ti.root.dense(ti.i, N).place(bondsNum)
 ti.root.dense(ti.i, N).dense(ti.j, scene.MAX_BONDS_NUM).place(bondsIdx)
 ti.root.dense(ti.i, N).place(label)
 ti.root.dense(ti.i, N).place(position)
-bondSearch = NeighborSearch2(scene.lowerBound, scene.upperBound, scene.h)
+bondSearch = NeighborSearch3(scene.lowerBound, scene.upperBound, scene.h)
 bondSearch.init()
 label.from_numpy(scene.label)
 position.from_numpy(np.delete(scene.position, -1, axis=1))
@@ -45,7 +45,7 @@ def computeBonds():
             pi = position[i]
             cell = bondSearch.getCell(pi)
             cnt = 0
-            for offs in ti.static(ti.grouped(ti.ndrange((-1, 2), (-1, 2)))):
+            for offs in ti.static(ti.grouped(ti.ndrange((-1, 2), (-1, 2), (-1, 2)))):
                 neighborCell = cell + offs
                 if bondSearch.isCellInRange(neighborCell):
                     for k in range(bondSearch.cellsNum[neighborCell]):

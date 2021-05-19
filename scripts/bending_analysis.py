@@ -6,6 +6,7 @@ plt.style.use('ggplot')
 sceneNames = ['bending', 'bending_fine']
 solverNames = ['bdem2']
 solverNames = ['mass_spring2', 'bdem2', 'peridynamics2', 'mpm2']
+solverNames = ['bdem2']
 # solverNames = ['peridynamics2']
 
 def plotAll():
@@ -33,10 +34,6 @@ def plotSolver():
                 pass
             t = data['time']
             f = data['load']
-            if solverName == 'bdem2' and sceneName == 'bending_fine':
-                f = np.roll(f, -int(f.shape[0]*0.025)) / 6.0 * 5.0
-                for i in range(f.shape[0]):
-                    f[i] = f[i] * max(float(i) / 0.6 / f.shape[0], 1.0)
             plt.plot(t, f, label='{}_{}'.format(sceneName,solverName))
 
         plt.legend()

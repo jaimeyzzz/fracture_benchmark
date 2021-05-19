@@ -6,7 +6,7 @@ from solver_base2 import SolverBase2
 
 @ti.data_oriented
 class SolverMpm2(SolverBase2):
-    GRID_SIZE = 128
+    GRID_SIZE = 32
     def __init__(self, scene, neighborSearch):
         super().__init__(scene, neighborSearch)
         self.kn = scene.kn
@@ -219,7 +219,7 @@ class SolverMpm2(SolverBase2):
             ci = self.phaseC[i]
             F = self.gD[i]
             J = F.determinant()
-            if J < 1.0: continue
+            if J < 1.1: continue
             if li == self.scene.FLUID and ci < self.deleteThreshold:
                 print('***', J)
                 self.position[i] = [-1.0, -1.0]
@@ -239,7 +239,7 @@ class SolverMpm2(SolverBase2):
                 B = F @ F.transpose()
                 devB = B - ti.Matrix.identity(ti.f32,2) * 1.0 / 2.0 * B.trace()
                 tauDev = self.mu * ti.pow(J, -2.0 / 2.0) * devB
-                prime = self.kappa / 2 * (J - 1 / J)
+                prime = self.kappa / 2.0 * (J - 1.0 / J)
                 tauVol = J * prime * ti.Matrix.identity(ti.f32,2)
                 if (J >= 1.0):
                     tau = g * (tauDev + tauVol)
@@ -251,7 +251,7 @@ class SolverMpm2(SolverBase2):
                 sigmaMax = eigenValues[0, 0]
                 newCi = ci
                 if (sigmaMax > self.sigmaF):
-                    print('###', self.sigmaF / sigmaMax)
+                    # print('###', self.sigmaF / sigmaMax)
                     newCi = ti.min(ci, self.sigmaF / sigmaMax)
                 self.phaseC[i] = newCi
                 self.phaseG[i] = newCi * newCi * (1 - self.phaseK) + self.phaseK

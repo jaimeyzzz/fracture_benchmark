@@ -64,8 +64,6 @@ dt = 1 / scene.fps / float(s)
 npLoad = np.float32([])
 npTime = np.float32([])
 
-
-
 frameIdx = 0
 while gui.running and frameIdx < NUM_FRAMES:
     start = time.time()
