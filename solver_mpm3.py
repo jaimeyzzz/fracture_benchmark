@@ -34,10 +34,12 @@ class SolverMpm3(SolverBase3):
         self.gridVelocity = ti.Vector.field(3, ti.f32)
         self.C = ti.Matrix.field(3, 3, ti.f32)
         self.gD = ti.Matrix.field(3, 3, ti.f32)
+        self.cauchy = ti.Matrix.field(3, 3, ti.f32)
         self.Jp = ti.field(ti.f32)
         self.gridOrigin = ti.Vector.field(3, ti.f32, 1)
         self.phaseC = ti.field(ti.f32)
         self.phaseG = ti.field(ti.f32)
+        self.sigmaMax = ti.field(ti.f32)
         self.phaseK = 0.001
 
         ti.root.dense(ti.i, self.N).place(self.C)
@@ -45,6 +47,8 @@ class SolverMpm3(SolverBase3):
         ti.root.dense(ti.i, self.N).place(self.Jp)
         ti.root.dense(ti.i, self.N).place(self.phaseC)
         ti.root.dense(ti.i, self.N).place(self.phaseG)
+        ti.root.dense(ti.i, self.N).place(self.sigmaMax)
+        ti.root.dense(ti.i, self.N).place(self.cauchy)
         ti.root.dense(ti.ijk, (self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)).place(self.gridMass)
         ti.root.dense(ti.ijk, (self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)).place(self.gridVelocity)
    
@@ -233,13 +237,28 @@ class SolverMpm3(SolverBase3):
                     tau = g * (tauDev + tauVol)
                 else:
                     tau = g * tauDev + tauVol
-                cauchy = tau / J
+                self.cauchy[i] = tau / J
                 # eigenValues = np.linalg.eig(cauchy)
                 # eigenValues, eigenVectors = ti.eig(cauchy, ti.f32)
-                U, sig, V = ti.svd(cauchy)
+    
+    def computeSigmaMax(self):
+        npCauchy = self.cauchy.to_numpy()
+        npSigmaMax = np.array([])
+        for cauchy in npCauchy:
+            eigenValues = np.linalg.eig(cauchy)
+            print(sigmaMax)
+            sigmaMax = eigenValues[0]
+            npSigmaMax = np.append(npSigmaMax, sigmaMax)
+        self.sigmaMax.from_numpy(npSigmaMax)
 
+    @ti.kernel
+    def solveCauchy(self):
+        for i in self.label:
+            li = self.label[i]
+            if li == self.scene.FLUID:
+                ci = self.phaseC[i]
                 # print(eigenValues)
-                sigmaMax = sig[0] #ti.max(sig[0], sig[1], sig[2])
+                sigmaMax = self.sigmaMax[i] #ti.max(sig[0], sig[1], sig[2])
                 # sigmaMax = eigenValues[0, 0]
                 newCi = ci
                 if (sigmaMax > self.sigmaF):
@@ -258,7 +277,11 @@ class SolverMpm3(SolverBase3):
         self.load.fill(0)
 
         self.particleToGrid(dt)
+
         self.solvePhase(dt)
+        self.computeSigmaMax()
+        self.solveCauchy()
+
         self.computeExternal(dt)
         self.gridToParticle(dt)
 
