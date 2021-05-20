@@ -48,7 +48,7 @@ elif SOLVER_NAME == 'peridynamics':
     solver = SolverPeridynamics3(scene, neighborSearch)
     pass
 elif SOLVER_NAME == 'mpm':
-    scene.cfl *= 1.0
+    scene.cfl *= 0.1
     solver = SolverMpm3(scene, neighborSearch)
     pass
     

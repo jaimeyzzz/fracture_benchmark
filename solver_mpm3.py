@@ -6,7 +6,7 @@ from solver_base3 import SolverBase3
 
 @ti.data_oriented
 class SolverMpm3(SolverBase3):
-    GRID_SIZE = 32
+    GRID_SIZE = 128
     def __init__(self, scene, neighborSearch):
         super().__init__(scene, neighborSearch)
         self.kn = scene.kn
@@ -16,9 +16,9 @@ class SolverMpm3(SolverBase3):
         self.us = scene.us
         self.h = scene.h
         self.gridSpacing = np.max(scene.upperBound - scene.lowerBound) / self.GRID_SIZE
-        self.E = 1.0e7
+        self.E = 1.0e4
         self.nu = 0.25
-        self.sigmaF = 2.0e6
+        self.sigmaF = 1.0e2
         self.deleteThreshold = 1.0
         self.mu = self.E / 2.0 * (1.0 + self.nu)    
         self.lamb = self.E * self.nu / ((1.0 + self.nu) * (1.0 - 2.0 * self.nu))
@@ -26,7 +26,7 @@ class SolverMpm3(SolverBase3):
 
         self.mu_0 = self.E / (2 * (1 + self.nu))
         self.lambda_0 = self.E * self.nu / ((1+self.nu) * (1 - 2 * self.nu)) # Lame parameters
-        self.particleVol = (self.gridSpacing * 0.5)**2
+        self.particleVol = (self.gridSpacing * 0.5)**3
         self.particleRho = 1.0e3
         self.particleMass = self.particleVol * self.particleRho
 
@@ -88,7 +88,7 @@ class SolverMpm3(SolverBase3):
             self.gridVelocity[i, j, k] = [0.0, 0.0, 0.0]
         for i in self.position:
             li = self.label[i]
-            if li != self.scene.FLUID: continue
+            # if li != self.scene.FLUID: continue
             mi = self.mass[i]
             xi = self.position[i]
             vi = self.velocity[i]
@@ -159,18 +159,18 @@ class SolverMpm3(SolverBase3):
                 self.gridVelocity[I] = (1 / self.gridMass[I]) * self.gridVelocity[I] # Momentum to velocity
                 self.gridVelocity[I][1] -= dt * 9.81 #self.scene.gravity
 
-                if I[0] < 3 and self.gridVelocity[I][0] < 0:          self.gridVelocity[I][0] = 0 # Boundary conditions
-                if I[0] > self.GRID_SIZE - 3 and self.gridVelocity[I][0] > 0: self.gridVelocity[I][0] = 0
-                if I[1] < 3 and self.gridVelocity[I][1] < 0:          self.gridVelocity[I][1] = 0
-                if I[1] > self.GRID_SIZE - 3 and self.gridVelocity[I][1] > 0: self.gridVelocity[I][1] = 0
-                if I[2] < 3 and self.gridVelocity[I][2] < 0:          self.gridVelocity[I][2] = 0
-                if I[2] > self.GRID_SIZE - 3 and self.gridVelocity[I][2] > 0: self.gridVelocity[I][2] = 0
+                if I[0] < 1 and self.gridVelocity[I][0] < 0:          self.gridVelocity[I][0] = 0 # Boundary conditions
+                if I[0] > self.GRID_SIZE - 1 and self.gridVelocity[I][0] > 0: self.gridVelocity[I][0] = 0
+                if I[1] < 1 and self.gridVelocity[I][1] < 0:          self.gridVelocity[I][1] = 0
+                if I[1] > self.GRID_SIZE - 1 and self.gridVelocity[I][1] > 0: self.gridVelocity[I][1] = 0
+                if I[2] < 1 and self.gridVelocity[I][2] < 0:          self.gridVelocity[I][2] = 0
+                if I[2] > self.GRID_SIZE - 1 and self.gridVelocity[I][2] > 0: self.gridVelocity[I][2] = 0
 
     @ti.kernel
     def gridToParticle(self, dt: ti.f32):
         for i in self.position:
             li = self.label[i]
-            if li != self.scene.FLUID: continue
+            # if li != self.scene.FLUID: continue
             mi = self.mass[i]
             xi = self.position[i]
             vi = self.velocity[i]
@@ -188,6 +188,7 @@ class SolverMpm3(SolverBase3):
                 g_v = self.gridVelocity[base + offset]
                 newVi += weight * g_v
                 newCi += 4 * weight * g_v.outer_product(dpos) / dx**2
+            if li != self.scene.FLUID: continue
             self.velocity[i] = newVi
             self.position[i] += dt * self.velocity[i]
             self.C[i] = newCi
@@ -197,8 +198,19 @@ class SolverMpm3(SolverBase3):
         for i in self.position:
             li = self.label[i]
             if li == self.scene.FLUID: continue
-            self.force[i] = ti.Vector([0.0, 0.0, 0.0])
-            self.position[i] += self.velocityMid[i] * dt
+            speed = 1.0
+            pi = self.position[i]
+            theta = -speed*2.0*np.pi*dt
+            if pi[0] < 0.0:
+                theta = -1.0 * theta
+            tx = pi[2]
+            ty = pi[1]
+            c = ti.cos(theta)
+            s = ti.sin(theta)
+            self.position[i][2] = c * tx - s * ty
+            self.position[i][1] = s * tx + c * ty
+            axis = ti.Vector([-1.0, 0.0, 0.0])
+            self.velocity[i] = self.velocityMid[i]+speed*2.0*np.pi*axis.cross(self.position[i])
 
     @ti.kernel
     def deleteParticles(self, dt: ti.f32):
@@ -239,8 +251,10 @@ class SolverMpm3(SolverBase3):
                 U, sig, V = ti.svd(cauchy)
 
                 # print(eigenValues)
-                sigmaMax = sig[0] #ti.max(sig[0], sig[1], sig[2])
+                a, b, c = ti.abs(sig[0]), ti.abs(sig[1]), ti.abs(sig[2])
+                sigmaMax = ti.max(ti.max(a, b), c) #ti.max(sig[0], sig[1], sig[2])
                 # sigmaMax = eigenValues[0, 0]
+                print('sigmaMax', sigmaMax)
                 newCi = ci
                 if (sigmaMax > self.sigmaF):
                     # print('###', self.sigmaF / sigmaMax)
