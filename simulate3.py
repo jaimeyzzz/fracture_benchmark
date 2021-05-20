@@ -9,7 +9,7 @@ from scene import Scene
 from solver_bdem3 import SolverBdem3
 from solver_dem3 import SolverDem3
 from solver_mass_spring3 import SolverMassSpring3
-# from solver_mpm2 import SolverMpm2
+from solver_mpm3 import SolverMpm3
 from solver_peridynamics3 import SolverPeridynamics3
 
 #ti.init(debug=True, log_level=ti.TRACE)
@@ -49,8 +49,7 @@ elif SOLVER_NAME == 'peridynamics':
     pass
 elif SOLVER_NAME == 'mpm':
     scene.cfl *= 1.0
-    scene.fps = 60.0
-    # solver = SolverMpm2(scene, neighborSearch)
+    solver = SolverMpm3(scene, neighborSearch)
     pass
     
 def dump(solver, frameIdx):
