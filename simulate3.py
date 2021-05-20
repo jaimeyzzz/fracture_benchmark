@@ -32,7 +32,7 @@ except OSError as error:
 neighborSearch = NeighborSearch3(scene.lowerBound, scene.upperBound, scene.r * 2.0)
 solver = None
 if SOLVER_NAME == 'bdem':
-    scene.cfl *= 0.5
+    M = 50
     solver = SolverBdem3(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)
@@ -43,8 +43,8 @@ elif SOLVER_NAME == 'mass_spring':
 elif SOLVER_NAME == 'peridynamics':
     scene.kn = 1e4
     scene.kt = 1e4
-    solver = SolverPeridynamics3(scene, neighborSearch)
     M = 42
+    solver = SolverPeridynamics3(scene, neighborSearch)
     pass
 elif SOLVER_NAME == 'mpm':
     scene.cfl *= 1.0

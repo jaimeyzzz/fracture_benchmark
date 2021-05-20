@@ -120,6 +120,28 @@ class SolverPeridynamics3(SolverBase3):
                     f += fn                   
                 self.force[i] += f
 
+    @ti.kernel
+    def updatePosition(self, dt: ti.f32):
+        for i in self.position:
+            self.force[i] = ti.Vector([0.0, 0.0, 0.0])
+            li = self.label[i]
+            if li == self.scene.FLUID:
+                self.position[i] += self.velocityMid[i] * dt
+            else:
+                speed = 1.0
+                pi = self.position[i]
+                theta = -speed*2.0*np.pi*dt
+                if pi[0] < 0.0:
+                    theta = -1.0 * theta
+                tx = pi[2]
+                ty = pi[1]
+                c = ti.cos(theta)
+                s = ti.sin(theta)
+                self.position[i][2] = c * tx - s * ty
+                self.position[i][1] = s * tx + c * ty
+                axis = ti.Vector([-1.0, 0.0, 0.0])
+                self.velocity[i] = self.velocityMid[i]+speed*2.0*np.pi*axis.cross(self.position[i])
+
     def update(self, dt):
         self.updateTime(dt)
         self.updatePosition(dt)

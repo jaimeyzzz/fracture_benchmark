@@ -284,6 +284,22 @@ class SolverBdem3(SolverBase3):
             wt = makeRotation(wi.norm() * dt, normalize(wi))
             self.rotation[i] = normalize(compose(wt, self.rotation[i]))
 
+            li = self.label[i]
+            if li != self.scene.FLUID:
+                speed = 1.0
+                pi = self.position[i]
+                theta = -speed*2.0*np.pi*dt
+                if pi[0] < 0.0:
+                    theta = -1.0 * theta
+                tx = pi[2]
+                ty = pi[1]
+                c = ti.cos(theta)
+                s = ti.sin(theta)
+                self.position[i][2] = c * tx - s * ty
+                self.position[i][1] = s * tx + c * ty
+                axis = ti.Vector([-1.0, 0.0, 0.0])
+                self.velocity[i] = self.velocityMid[i]+speed*2.0*np.pi*axis.cross(self.position[i])
+
     @ti.kernel
     def updateVelocity(self, dt: ti.f32):
         for i in self.velocityMid:
