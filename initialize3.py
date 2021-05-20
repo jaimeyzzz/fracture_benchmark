@@ -51,7 +51,7 @@ def computeBonds():
                     for k in range(bondSearch.cellsNum[neighborCell]):
                         j = bondSearch.cells[neighborCell, k]
                         lj = label[j]
-                        if lj != scene.FLUID: continue
+                        # if lj != scene.FLUID: continue
                         pj = position[j]
                         if i != j and (pi - pj).norm() < scene.h:
                             bondsIdx[i, cnt] = j

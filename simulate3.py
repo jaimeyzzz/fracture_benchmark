@@ -13,7 +13,7 @@ from solver_mass_spring3 import SolverMassSpring3
 from solver_peridynamics3 import SolverPeridynamics3
 
 #ti.init(debug=True, log_level=ti.TRACE)
-ti.init(arch=ti.cpu, debug=True)
+ti.init(arch=ti.gpu)
 
 SCENE_FOLDER = 'scene3'
 SCENE_NAME = sys.argv[1]
@@ -38,6 +38,7 @@ elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
     solver = SolverMassSpring3(scene, neighborSearch)
+    M = 100
     pass
 elif SOLVER_NAME == 'peridynamics':
     scene.kn = 1e4
@@ -105,6 +106,8 @@ npLoad = np.float32([])
 npTime = np.float32([])
 
 frameIdx = 0
+dump(solver, frameIdx)
+print('Process frame', frameIdx)
 while gui.running and frameIdx < NUM_FRAMES:
     start = time.time()
     for _ in range(s):
@@ -114,7 +117,6 @@ while gui.running and frameIdx < NUM_FRAMES:
         npLoad = np.append(npLoad, np.linalg.norm(load))
         npTime = np.append(npTime, solver.t[0])
     end = time.time()
-    print('Process frame', frameIdx, 'for', end - start)
     print(load, solver.t[0])
 
     npPosition = solver.position.to_numpy()
@@ -139,6 +141,7 @@ while gui.running and frameIdx < NUM_FRAMES:
     # npEnd = npEnd.reshape((-1, 2))
     # gui.lines(npBegin, npEnd, color=0x000)
     frameIdx += 1
+    print('Process frame', frameIdx, 'for', end - start)
     dump(solver, frameIdx)
     # gui.show(outputDir+f'{frameIdx:04d}.jpg')
 
