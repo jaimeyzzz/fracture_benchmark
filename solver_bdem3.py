@@ -4,6 +4,55 @@ import taichi as ti
 from neighbor_search3 import NeighborSearch3
 from solver_base3 import SolverBase3
 
+###### static methods #####
+@ti.func
+def compose(qa, qb):
+    a = ti.Vector([qa[0], qa[1], qa[2]])
+    b = ti.Vector([qb[0], qb[1], qb[2]])
+    q = qa[3] * b + qb[3] * a + a.cross(b)
+    return ti.Vector([q[0], q[1], q[2], qa[3] * qb[3] - a.dot(b)])
+
+@ti.func
+def decompose(q):
+    a = q[3]
+    if (a < -1.0):
+        a = -1.0
+    if (a > 1.0):
+        a = 1.0
+    return 2.0 * ti.acos(a)
+
+@ti.func
+def rotate(a, q):
+    w = ti.Vector([a[0], a[1], a[2], 0.0])
+    q_ = ti.Vector([-q[0], -q[1], -q[2], q[3]])
+    w_ = compose(compose(q, w), q_)
+    return ti.Vector([w_[0], w_[1], w_[2]])
+
+def npCompose(qa, qb):
+    a = np.array([qa[0], qa[1], qa[2]])
+    b = np.array([qb[0], qb[1], qb[2]])
+    q = qa[3] * b + qb[3] * a + np.cross(a, b)
+    return np.array([q[0], q[1], q[2], qa[3] * qb[3] - a.dot(b)])
+
+def npRotate(a, q):
+    w = np.array([a[0], a[1], a[2], 0.0])
+    q_ = np.array([-q[0], -q[1], -q[2], q[3]])
+    w_ = npCompose(npCompose(q, w), q_)
+    return np.array([w_[0], w_[1], w_[2]])
+
+@ti.func
+def makeRotation(theta, axis):
+    c = ti.cos(0.5 * theta)
+    s = ti.sin(0.5 * theta)
+    return ti.Vector([s * axis[0], s * axis[1], s * axis[2], c])
+
+@ti.func
+def normalize(a):
+    b = a
+    if a.norm() > 0.0:
+        b = a / a.norm()
+    return b
+
 @ti.data_oriented
 class SolverBdem3(SolverBase3):
     def __init__(self, scene, neighborSearch):
@@ -18,10 +67,10 @@ class SolverBdem3(SolverBase3):
         self.tauc = scene.tau
 
         self.momentOfInertia = ti.field(ti.f32)
-        self.rotation = ti.Vector.field(ti.f32)
-        self.angularVelocity = ti.Vector.field(ti.f32)
-        self.angularVelocityMid = ti.Vector.field(ti.f32)
-        self.torsion = ti.Vector.field(ti.f32)
+        self.rotation = ti.Vector.field(4, ti.f32)
+        self.angularVelocity = ti.Vector.field(3, ti.f32)
+        self.angularVelocityMid = ti.Vector.field(3, ti.f32)
+        self.torsion = ti.Vector.field(3, ti.f32)
         self.bondsLength = ti.field(ti.f32)
         self.bondsSigma = ti.field(ti.f32)
         self.bondsTao = ti.field(ti.f32)
@@ -47,6 +96,7 @@ class SolverBdem3(SolverBase3):
             li = self.label[i]
             if li == self.scene.FLUID:
                 self.momentOfInertia[i] = 2.0 / 5.0 * self.mass[i] * self.radius[i] ** 2
+                self.rotation[i] = [0.0, 0.0, 0.0, 1.0]
    
     @ti.kernel
     def initBonds(self):
@@ -139,7 +189,7 @@ class SolverBdem3(SolverBase3):
                 vi = self.velocityMid[i]
                 wi = self.angularVelocity[i]
                 force = ti.Vector([0.0, 0.0, 0.0])
-                torsion = 0.0
+                torsion = ti.Vector([0.0, 0.0, 0.0])
                 for idx in range(self.bondsAccum[i], self.bondsAccum[i + 1]):
                     j = self.bondsIdx[idx]
                     state = self.bondsState[idx]
@@ -159,13 +209,11 @@ class SolverBdem3(SolverBase3):
                     # params
                     r0 = l0 / 2.0
                     s0 = 2.0 * r0
-                    I0 = 2.0 / 3.0 * r0 * r0 * r0
+                    I0 = 0.5 * np.pi * r0 * r0 * r0 * r0
+                    J0 = 2.0 * I0
                     l = (pj - pi).norm()
                     dl = l - l0
                     n = (pj - pi) / l
-                    t = ti.Vector([-n[1],n[0]])
-                    thetai = self.clampRad(ti.atan2(d[1],d[0])+qi-ti.atan2(n[1],n[0]))
-                    thetaj = self.clampRad(ti.atan2(d[1],d[0])+qj-ti.atan2(n[1],n[0]))
 
                     kn = self.kn * s0 / l0
                     kt = self.kt * I0 / l0 / l
@@ -180,32 +228,61 @@ class SolverBdem3(SolverBase3):
                     vn = (vj - vi).dot(n) * n
                     fnDamp = gamman * vn
                     # shear
-                    ft = -kt * (thetai + thetaj) * t
+                    dirI = normalize(rotate(d, qi))
+                    dirJ = normalize(rotate(d, qj))
+                    dij = (dirI + dirJ) * 0.5
+                    dn = dij.dot(n)
+                    ds = (dij - dn * n).norm(); 
+                    thetaij = ti.atan2(ds, dn)
+                    t = normalize(dij - dn * n)
+                    ft = -kt * thetaij * t
                     vt = (vj - vi) - vn
                     ftDamp = gammat * vt
                     # bend
-                    mt = km * (thetaj - thetai)
-                    mtDamp = gammam * (wj - wi)
+                    qi_ = ti.Vector([-qi[0], -qi[1], -qi[2], qi[3]])
+                    qij = normalize(compose(qj, qi_))
+                    theta = decompose(qij)
+                    bij = normalize(ti.Vector([qij[0], qij[1], qij[2]])) * theta
+                    bn = bij.dot(n) * n
+                    bt = bij - bn
+                    ml = km * bn
+                    mt = km * bt
+                    wij = wi - wj
+                    wn = wij.dot(n) * n
+                    wt = wij - wn
+                    mlDamp = -gammam * wn
+                    mtDamp = -gammam * wt
                     # fracture
-                    sigma = (fn + fnDamp).norm() / s0 + ti.abs(mt + mtDamp) * r0 / I0
-                    tao = (ft + ftDamp).norm() / s0
+                    sigma = (fn + fnDamp).norm() / s0 + (mt + mtDamp).norm() * r0 / I0
+                    tao = (ft + ftDamp).norm() / s0 + (ml + mlDamp).norm() * r0 / J0
                     if (((dl > 0.0) and sigma > sigma0) or tao > tao0):
-                        self.bondsState[idx] = self.scene.BOND_BROKEN
-                        continue
-                    force += fn + fnDamp
-                    force += ft + ftDamp
-                    torsion += mt + mtDamp
+                        self.bondsState[i] = 3
+                        print(i, j, ' | ',sigma, tao, thetaij, ' | ', fn.norm(), ft.norm(), ml.norm(), mt.norm())
+                    force += fn + ft
+                    force += fnDamp + ftDamp
+                    torsion += ml + mt
+                    torsion += mlDamp + mtDamp
                     torsion += (ft + ftDamp).cross(-0.5 * l * n)
                 self.force[i] += force
                 self.torsion[i] += torsion
+        # bond crack
+        for i in self.position:
+            li = self.label[i]
+            if li != self.scene.FLUID: continue
+            for idx in range(self.bondsAccum[i], self.bondsAccum[i + 1]):
+                bsi = self.bondsState[i]
+                if bsi == 3:
+                    self.bondsState[i] = self.scene.BOND_BROKEN
             
     @ti.kernel
-    def updatePosition(self, dt: ti.f32):
+    def updatePosition(self, dt: ti.f64):
         for i in self.position:
             self.force[i] = ti.Vector([0.0, 0.0, 0.0])
-            self.torsion[i] = 0.0
+            self.torsion[i] = ti.Vector([0.0, 0.0, 0.0])
             self.position[i] += self.velocityMid[i] * dt; 
-            self.rotation[i] += self.angularVelocityMid[i] * dt; 
+            wi = self.angularVelocityMid[i]
+            wt = makeRotation(wi.norm() * dt, normalize(wi))
+            self.rotation[i] = normalize(compose(wt, self.rotation[i]))
 
     @ti.kernel
     def updateVelocity(self, dt: ti.f32):

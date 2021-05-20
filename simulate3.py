@@ -33,7 +33,7 @@ neighborSearch = NeighborSearch3(scene.lowerBound, scene.upperBound, scene.r * 2
 solver = None
 if SOLVER_NAME == 'bdem':
     scene.cfl *= 0.5
-    # solver = SolverBdem2(scene, neighborSearch)
+    solver = SolverBdem3(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
