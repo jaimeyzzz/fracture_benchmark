@@ -32,7 +32,8 @@ except OSError as error:
 neighborSearch = NeighborSearch3(scene.lowerBound, scene.upperBound, scene.r * 2.0)
 solver = None
 if SOLVER_NAME == 'bdem':
-    M = 50
+    M = 100
+    # scene.mMin *= 0.1
     solver = SolverBdem3(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)

@@ -95,8 +95,9 @@ class SolverBdem3(SolverBase3):
         for i in self.momentOfInertia:
             li = self.label[i]
             if li == self.scene.FLUID:
-                self.momentOfInertia[i] = 2.0 / 5.0 * self.mass[i] * self.radius[i] ** 2
                 self.rotation[i] = [0.0, 0.0, 0.0, 1.0]
+                # self.mass[i] *= 0.1
+                self.momentOfInertia[i] = 2.0 / 5.0 * self.mass[i] * self.radius[i] ** 2
    
     @ti.kernel
     def initBonds(self):
@@ -208,8 +209,8 @@ class SolverBdem3(SolverBase3):
                     d = self.bondsDirection[idx]
                     # params
                     r0 = l0 / 2.0
-                    s0 = 2.0 * r0
-                    I0 = 0.5 * np.pi * r0 * r0 * r0 * r0
+                    s0 = np.pi * r0 * r0
+                    I0 = 0.25 * np.pi * r0 * r0 * r0 * r0
                     J0 = 2.0 * I0
                     l = (pj - pi).norm()
                     dl = l - l0
@@ -257,7 +258,7 @@ class SolverBdem3(SolverBase3):
                     tao = (ft + ftDamp).norm() / s0 + (ml + mlDamp).norm() * r0 / J0
                     if (((dl > 0.0) and sigma > sigma0) or tao > tao0):
                         self.bondsState[i] = 3
-                        print(i, j, ' | ',sigma, tao, thetaij, ' | ', fn.norm(), ft.norm(), ml.norm(), mt.norm())
+                        # print(i, j, ' | ',sigma, tao, thetaij, ' | ', fn.norm(), ft.norm(), ml.norm(), mt.norm())
                     force += fn + ft
                     force += fnDamp + ftDamp
                     torsion += ml + mt

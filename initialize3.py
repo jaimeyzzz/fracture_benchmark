@@ -5,6 +5,8 @@ import taichi as ti
 from neighbor_search3 import NeighborSearch3
 from scene import Scene
 
+ti.init(arch=ti.gpu)
+
 SCENE_FOLDER = 'scene3'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
@@ -17,7 +19,7 @@ if SOLVER_NAME == 'bdem':
 elif SOLVER_NAME == 'dem':
     pass
 elif SOLVER_NAME == 'mass_spring':
-    scene.h = scene.r * 4.01
+    scene.h = scene.r * 3.01
 elif SOLVER_NAME == 'peridynamics':
     scene.h = scene.r * 6.01
 
