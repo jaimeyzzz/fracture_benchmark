@@ -23,8 +23,8 @@ class Scene:
         self.velocity = np.array([], dtype=float)
         self.color = np.array([], dtype=float)
 
-        self.lowerBound = np.float32([-0.5, -0.3, -0.3])
-        self.upperBound = np.float32([0.5, 0.3, 0.3])
+        self.lowerBound = np.float32([-0.5, -0.5, -0.5])
+        self.upperBound = np.float32([0.5, 0.5, 0.5])
         self.gravity = np.float32([0.0, -9.81, 0.0])
         # self.gravity = np.float32([0.0, 0.0])
 
