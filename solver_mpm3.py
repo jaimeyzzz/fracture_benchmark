@@ -58,22 +58,6 @@ class SolverMpm3(SolverBase3):
         self.initProperties()
         self.gridOrigin.from_numpy(self.scene.lowerBound.reshape(1,3))
 
-    # @ti.func
-    # def cofactorMatrix(self, F):
-    #     A = ti.Matrix.zero(ti.f32,3,3)
-    #     A[0, 0] = F[1, 1]
-    #     A[1, 0] = -F[0, 1]
-    #     A[0, 1] = -F[1, 0]
-    #     A[1, 1] = F[0, 0]
-    #     return A
-
-    @ti.func
-    def contractMatrices(self, F1, F2):
-        result = 0.0
-        for i, j in ti.static(ti.ndrange(3, 3)):
-            result += F1[i, j] * F2[i, j]
-        return result
-
     @ti.kernel
     def initProperties(self):
         for i in self.position:
