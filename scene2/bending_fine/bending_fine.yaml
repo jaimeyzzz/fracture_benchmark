@@ -1,4 +1,4 @@
-cfl: 0.2
+cfl: 0.1
 dampingRatio: 0.7
 density: 2.5e+3
 fps: 60.0
@@ -10,4 +10,4 @@ bondNormalStrength: 0.2
 bondTangentialStrength: 0.2
 # collision
 frictionCoefficient: 0.7
-collisionStiffness: 1.e+7
+collisionStiffness: 1.e+5

@@ -101,7 +101,10 @@ class SolverMassSpring2(SolverBase2):
             if li == self.scene.FLUID:
                 mi = self.mass[i]
                 xi = self.position[i]
+                ri = self.radius[i]
                 f = ti.Vector([0.0, 0.0])
+                sigmaSum = 0.0
+                sigmaCount = 0
                 for idx in range(self.bondsAccum[i], self.bondsAccum[i + 1]):
                     j = self.bondsIdx[idx]
                     state = self.bondsState[idx]
@@ -109,15 +112,19 @@ class SolverMassSpring2(SolverBase2):
                     bond = self.bonds[idx]
                     l0 = bond[0]
                     xj = self.position[j]
+                    rj = self.radius[j]
                     dx = xi - xj
                     l = dx.norm()
                     n = dx / l
                     fn = -self.kn * (l - l0) * n
-                    tao = fn.norm()
+                    sigma = fn.norm() / 2.0 / (0.5 * (ri + rj))
+                    sigmaSum += sigma
+                    sigmaCount += 1
                     if (l - l0) / l0 > self.sigmac:
                         self.bondsState[idx] = self.scene.BOND_BROKEN
                     f += fn                   
                 self.force[i] += f
+                self.color[i] = [sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0]
     
     def update(self, dt):
         self.updateTime(dt)
