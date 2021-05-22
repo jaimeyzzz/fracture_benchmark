@@ -74,6 +74,9 @@ class SolverDem2(SolverBase2):
                 self.oldNeighbors[i, idx] = self.neighbors[i, idx]
                 self.oldStrings[i, idx] = self.strings[i, idx]
     
+
+
+    
     def update(self, dt):
         self.updateTime(dt)
         self.updatePosition(dt)
@@ -84,3 +87,5 @@ class SolverDem2(SolverBase2):
         # self.computeBoundary(dt)
 
         self.updateVelocity(dt)
+
+        self.computeColor()

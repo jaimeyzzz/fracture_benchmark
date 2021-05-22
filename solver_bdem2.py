@@ -140,6 +140,8 @@ class SolverBdem2(SolverBase2):
                 wi = self.angularVelocity[i]
                 force = ti.Vector([0.0, 0.0])
                 torsion = 0.0
+                sigmaSum = 0.0
+                sigmaCount = 0
                 for idx in range(self.bondsAccum[i], self.bondsAccum[i + 1]):
                     j = self.bondsIdx[idx]
                     state = self.bondsState[idx]
@@ -189,6 +191,8 @@ class SolverBdem2(SolverBase2):
                     # fracture
                     sigma = (fn + fnDamp).norm() / s0 + ti.abs(mt + mtDamp) * r0 / I0
                     tao = (ft + ftDamp).norm() / s0
+                    sigmaSum += sigma
+                    sigmaCount += 1
                     if (((dl > 0.0) and sigma > sigma0) or tao > tao0):
                         self.bondsState[idx] = self.scene.BOND_BROKEN
                         continue
@@ -198,6 +202,8 @@ class SolverBdem2(SolverBase2):
                     torsion += (ft + ftDamp).cross(-0.5 * l * n)
                 self.force[i] += force
                 self.torsion[i] += torsion
+
+                self.color[i] = [sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0]
             
     @ti.kernel
     def updatePosition(self, dt: ti.f32):
@@ -220,7 +226,7 @@ class SolverBdem2(SolverBase2):
                 angularAcc = self.torsion[i] / Ii
                 self.angularVelocity[i] = self.angularVelocityMid[i] + 0.5 * angularAcc * dt
                 self.angularVelocityMid[i] += angularAcc * dt
-    
+
     def update(self, dt):
         self.updateTime(dt)
 

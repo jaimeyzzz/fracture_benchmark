@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
@@ -79,8 +80,16 @@ while gui.running and frameIdx < NUM_FRAMES:
 
     npPosition = solver.position.to_numpy() / [1.0, 1.0] + [0.5, 0.5]
     npLabel = solver.label.to_numpy()
+    npColor = solver.color.to_numpy()
+    colors = np.zeros(npPosition[npLabel == 0].shape[0], dtype=np.uint32)
+    for i, color in enumerate(npColor[npLabel == 0]):
+        # c = np.uint32(color * 255.0)
+        c = np.uint32(np.array(plt.cm.jet(color[0])) * 255.0)
+        colors[i] = (c[0] << 16) | (c[1] << 8) | c[2]
+    print('color max : ', hex(np.max(colors)))
+
     radius = WINDOW_SIZE * scene.r
-    gui.circles(npPosition[npLabel == 0], radius=radius, color=0xffaa11) # 0088ff
+    gui.circles(npPosition[npLabel == 0], radius=radius, color=colors) # 0088ff
     gui.circles(npPosition[npLabel != 0], radius=radius, color=0x000000)
     # # bonds
     # npBondsIdx = solver.bondsIdx.to_numpy()
