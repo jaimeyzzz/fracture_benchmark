@@ -125,7 +125,7 @@ class SolverPeridynamics2(SolverBase2):
                         self.bondsState[idx] = self.scene.BOND_BROKEN
                     f += fn                   
                 self.force[i] += f
-                self.color[i] = [sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0]
+                self.color[i] = [sigmaSum / sigmaCount / self.sigmac / self.kn / 100.0, 0.0, 0.0]
 
     def update(self, dt):
         self.updateTime(dt)

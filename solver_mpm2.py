@@ -48,7 +48,7 @@ class SolverMpm2(SolverBase2):
     def init(self):
         super().init()
         self.initProperties()
-        self.gridOrigin.from_numpy(self.scene.lowerBound.reshape(1,2))
+        self.gridOrigin.from_numpy(self.scene.lowerBound[0:2].reshape(1,2))
 
     @ti.func
     def cofactorMatrix(self, F):

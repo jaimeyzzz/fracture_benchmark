@@ -20,7 +20,8 @@ SCENE_FOLDER = 'scene2'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
 NUM_FRAMES = int(sys.argv[3])
-WINDOW_SIZE = 1280
+WINDOW_SIZE = 640
+M = 1
 
 scene = Scene(SCENE_FOLDER, SCENE_NAME)
 outputDir = 'output/images/{}_{}2/'.format(SCENE_NAME, SOLVER_NAME)
@@ -37,11 +38,11 @@ if SOLVER_NAME == 'bdem':
     solver = SolverBdem2(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
     scene.cfl = 0.2
+    M = 9
     solver = SolverMassSpring2(scene, neighborSearch)
 elif SOLVER_NAME == 'peridynamics':
     scene.cfl = 0.2
-    scene.kn = 1e4
-    scene.kt = 1e4
+    scene.kn /= 100.0
     solver = SolverPeridynamics2(scene, neighborSearch)
     M = 42
 elif SOLVER_NAME == 'mpm':
