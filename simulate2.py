@@ -39,7 +39,7 @@ from scipy.sparse import csgraph
 from scipy.sparse.linalg import eigs
 
 data = np.ones(solver.indices.shape)
-G = csr_matrix((data,solver.indices,solver.inclusive),shape=(N,N))
+G = csr_matrix((data,solver.indices,solver.inclusive),shape=(solver.N,solver.N))
 L = csgraph.laplacian(G)
 vals, _ = eigs(L, k=1)
 M = vals[0]
