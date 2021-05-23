@@ -15,6 +15,8 @@ class NeighborSearch2:
         self.upperBound = ti.Vector.field(2, ti.f32)
         self.gridSize = ti.Vector.field(2, ti.i32)
 
+        lowerBound = lowerBound[0:2]
+        upperBound = upperBound[0:2]
         blockSize = 2**(np.ceil(np.log2((upperBound-lowerBound)/spacing/BLOCK_UNIT_SIZE)).astype(int))
         gridSize = blockSize * BLOCK_UNIT_SIZE
         print("Neighbor Search Grid/Block : ", gridSize, blockSize)

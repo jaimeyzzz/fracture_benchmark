@@ -14,40 +14,41 @@ from solver_mpm2 import SolverMpm2
 from solver_peridynamics2 import SolverPeridynamics2
 
 #ti.init(debug=True, log_level=ti.TRACE)
-ti.init(arch=ti.cpu, debug=True)
+ti.init(arch=ti.cpu, debug=True, default_fp=ti.f32)
 
 SCENE_FOLDER = 'scene2'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
 NUM_FRAMES = int(sys.argv[3])
-M = 6
-WINDOW_SIZE = 640
+WINDOW_SIZE = 1280
 
 scene = Scene(SCENE_FOLDER, SCENE_NAME)
 outputDir = 'output/images/{}_{}2/'.format(SCENE_NAME, SOLVER_NAME)
 try:
     os.mkdir(outputDir)
 except OSError as error:
-    print(error)   
+    print(error) 
 
 neighborSearch = NeighborSearch2(scene.lowerBound, scene.upperBound, scene.r * 2.0)
 solver = None
 if SOLVER_NAME == 'bdem':
-    scene.cfl *= 0.5
+    scene.cfl = 0.05
+    M = 8
     solver = SolverBdem2(scene, neighborSearch)
-elif SOLVER_NAME == 'dem':
-    solver = SolverDem2(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
+    scene.cfl = 0.2
     solver = SolverMassSpring2(scene, neighborSearch)
 elif SOLVER_NAME == 'peridynamics':
+    scene.cfl = 0.2
     scene.kn = 1e4
     scene.kt = 1e4
     solver = SolverPeridynamics2(scene, neighborSearch)
     M = 42
 elif SOLVER_NAME == 'mpm':
-    scene.cfl *= 1.0
-    scene.fps = 60.0
+    scene.cfl = 0.2
     solver = SolverMpm2(scene, neighborSearch)
+elif SOLVER_NAME == 'dem':
+    solver = SolverDem2(scene, neighborSearch)
     
 # TAICHI MATERIALIZE
 neighborSearch.init()
@@ -87,11 +88,10 @@ while gui.running and frameIdx < NUM_FRAMES:
         c = np.uint32(np.array(plt.cm.jet(color[0])) * 255.0)
         colors[i] = (c[0] << 16) | (c[1] << 8) | c[2]
     print('color max : ', hex(np.max(colors)))
-
     radius = WINDOW_SIZE * scene.r
     gui.circles(npPosition[npLabel == 0], radius=radius, color=colors) # 0088ff
     gui.circles(npPosition[npLabel != 0], radius=radius, color=0x000000)
-    # # bonds
+    # # draw bonds
     # npBondsIdx = solver.bondsIdx.to_numpy()
     # npBondsAccum = solver.bondsAccum.to_numpy()
     # npBondsState = solver.bondsState.to_numpy()

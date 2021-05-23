@@ -203,7 +203,7 @@ class SolverBdem2(SolverBase2):
                 self.force[i] += force
                 self.torsion[i] += torsion
 
-                self.color[i] = [sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0]
+                self.color[i] = ti.Vector([sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0])
             
     @ti.kernel
     def updatePosition(self, dt: ti.f32):

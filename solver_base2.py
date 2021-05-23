@@ -71,7 +71,7 @@ class SolverBase2:
         self.label.from_numpy(self.scene.label)
         self.radius.from_numpy(self.scene.radius)
         self.oldNeighborsNum.fill(0)
-        self.gravity.from_numpy(self.scene.gravity.reshape((-1,2)))
+        self.gravity.from_numpy(self.scene.gravity[0:2].reshape((-1,2)))
         self.bondsAccum.from_numpy(self.inclusive)
         self.bondsIdx.from_numpy(self.indices)
 
