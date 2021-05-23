@@ -77,13 +77,13 @@ for i in range(N):
 np.savez_compressed(filepath, inclusive=inclusive, indices=indices)
 
 # EIGENS
-from scipy.sparse import csr_matrix
-from scipy.sparse import csgraph
-from scipy.sparse.linalg import eigs
+# from scipy.sparse import csr_matrix
+# from scipy.sparse import csgraph
+# from scipy.sparse.linalg import eigs
 
-data = np.ones(indices.shape)
-G = csr_matrix((data,indices,inclusive),shape=(N,N))
-L = csgraph.laplacian(G)
+# data = np.ones(indices.shape)
+# G = csr_matrix((data,indices,inclusive),shape=(N,N))
+# L = csgraph.laplacian(G)
 
-vals, vecs = eigs(L, k=6)
-print(vals)
+# vals, vecs = eigs(L, k=6)
+# print(vals)

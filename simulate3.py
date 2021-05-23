@@ -19,7 +19,7 @@ SCENE_FOLDER = 'scene3'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
 NUM_FRAMES = int(sys.argv[3])
-M = 6
+M = 1
 WINDOW_SIZE = 640
 
 scene = Scene(SCENE_FOLDER, SCENE_NAME)

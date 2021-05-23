@@ -7,6 +7,7 @@ import time
 
 from neighbor_search2 import NeighborSearch2
 from scene import Scene
+from solver_base2 import SolverBase2
 from solver_bdem2 import SolverBdem2
 from solver_dem2 import SolverDem2
 from solver_mass_spring2 import SolverMassSpring2
@@ -31,22 +32,31 @@ except OSError as error:
     print(error) 
 
 neighborSearch = NeighborSearch2(scene.lowerBound, scene.upperBound, scene.r * 2.0)
-solver = None
+solver = SolverBase2(scene, neighborSearch)
+# EIGENS
+from scipy.sparse import csr_matrix
+from scipy.sparse import csgraph
+from scipy.sparse.linalg import eigs
+
+data = np.ones(solver.indices.shape)
+G = csr_matrix((data,solver.indices,solver.inclusive),shape=(N,N))
+L = csgraph.laplacian(G)
+vals, _ = eigs(L, k=1)
+M = vals[0]
+
 if SOLVER_NAME == 'bdem':
     scene.cfl = 0.05
-    M = 8
     solver = SolverBdem2(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
     scene.cfl = 0.2
-    M = 9
     solver = SolverMassSpring2(scene, neighborSearch)
 elif SOLVER_NAME == 'peridynamics':
     scene.cfl = 0.2
     scene.kn /= 100.0
     solver = SolverPeridynamics2(scene, neighborSearch)
-    M = 42
 elif SOLVER_NAME == 'mpm':
     scene.cfl = 0.2
+    M = 1
     solver = SolverMpm2(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
     solver = SolverDem2(scene, neighborSearch)
