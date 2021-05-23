@@ -6,7 +6,7 @@ from solver_base2 import SolverBase2
 
 @ti.data_oriented
 class SolverMpm2(SolverBase2):
-    GRID_SIZE = 32
+    GRID_SIZE = 64
     def __init__(self, scene, neighborSearch):
         super().__init__(scene, neighborSearch)
         self.kn = scene.kn
@@ -23,10 +23,10 @@ class SolverMpm2(SolverBase2):
         self.kappa = 2.0 / 3.0 * self.mu + self.lamb
 
         self.sigmaF = 1.0e6
-        self.deleteThreshold = 0.0
+        self.deleteThreshold = 0.1
 
         self.particleVol = (self.gridSpacing * 0.5)**2
-        self.particleRho = 1.0e3
+        self.particleRho = 2.6e3
         self.particleMass = self.particleVol * self.particleRho
 
         self.gridMass = ti.field(ti.f32)
@@ -74,6 +74,7 @@ class SolverMpm2(SolverBase2):
             if li == self.scene.FLUID:
                 self.mass[i] = self.particleMass
                 self.phaseC[i] = 1.0
+                self.phaseG[i] = 1.0
             else:
                 self.mass[i] = self.particleMass #* 1e4
 
@@ -120,6 +121,9 @@ class SolverMpm2(SolverBase2):
 
     @ti.kernel
     def computeExternal(self, dt: ti.f32):
+        radius = 0.0375
+        offset = -0.375
+        height = 0.013125
         cy = 0.16 - self.t[0] * 0.1
         for i, j in self.gridMass:
             dx = self.gridSpacing
@@ -127,16 +131,16 @@ class SolverMpm2(SolverBase2):
                 self.gridVelocity[i, j] = (1 / self.gridMass[i, j]) * self.gridVelocity[i, j] # Momentum to velocity
                 self.gridVelocity[i, j][1] -= dt * 9.81 # gravity
 
-                dist = ti.Vector([i * dx, j * dx]) + self.gridOrigin[0] - [0.28, -0.15]
-                if dist.norm() < 0.07:
+                dist = ti.Vector([i * dx, j * dx]) + self.gridOrigin[0] - [offset, -height]
+                if dist.norm() < radius:
                     dist = dist.normalized()
                     self.gridVelocity[i, j] -= dist * min(0, self.gridVelocity[i, j].dot(dist))
-                dist = ti.Vector([i * dx, j * dx]) + self.gridOrigin[0] - [-0.28, -0.15]
-                if dist.norm() < 0.07:
+                dist = ti.Vector([i * dx, j * dx]) + self.gridOrigin[0] - [-offset, -height]
+                if dist.norm() < radius:
                     dist = dist.normalized()
                     self.gridVelocity[i, j] -= dist * min(0, self.gridVelocity[i, j].dot(dist))
                 dist = ti.Vector([i * dx, j * dx]) + self.gridOrigin[0] - [0.0, cy]
-                if dist.norm() < 0.07:
+                if dist.norm() < radius:
                     dist = dist.normalized()
                     deltaV = -dist * min(0, self.gridVelocity[i, j].dot(dist)) + [0.0, -0.1]
                     self.gridVelocity[i, j] += deltaV
@@ -146,6 +150,38 @@ class SolverMpm2(SolverBase2):
                 if i > self.GRID_SIZE - 3 and self.gridVelocity[i, j][0] > 0: self.gridVelocity[i, j][0] = 0
                 if j < 3 and self.gridVelocity[i, j][1] < 0:          self.gridVelocity[i, j][1] = 0
                 if j > self.GRID_SIZE - 3 and self.gridVelocity[i, j][1] > 0: self.gridVelocity[i, j][1] = 0
+
+    @ti.kernel
+    def computeCollision(self, dt: ti.f32):
+        cy = 0.16 - self.t[0] * 0.1
+        radius = 0.0375
+        offset = -0.375
+        height = 0.013125
+        for i in self.position:
+            li = self.label[i]
+            if li != self.scene.FLUID: continue
+            pi = self.position[i]
+            vi = self.velocity[i]
+
+            dist = pi - [offset, -height]
+            if dist.norm() < radius:
+                dist = dist.normalized()
+                deltaV = -dist * min(0, self.velocity[i].dot(dist))
+                self.velocity[i] += deltaV
+                self.position[i] += deltaV * dt
+            dist = pi - [-offset, -height]
+            if dist.norm() < radius:
+                dist = dist.normalized()
+                deltaV = -dist * min(0, self.velocity[i].dot(dist))
+                self.velocity[i] += deltaV
+                self.position[i] += deltaV * dt
+            dist = pi - [0.0, cy]
+            if dist.norm() < radius:
+                dist = dist.normalized()
+                deltaV = -dist * min(0, self.velocity[i].dot(dist)) + [0.0, -0.1]
+                self.velocity[i] += deltaV
+                self.position[i] += deltaV * dt
+                self.load[0] += deltaV * self.mass[i] / dt
 
     @ti.kernel
     def gridToParticle(self, dt: ti.f32):
@@ -195,30 +231,29 @@ class SolverMpm2(SolverBase2):
             li = self.label[i]
             if li == self.scene.FLUID:
                 ci = self.phaseC[i]
-                F = self.gD[i]
+                F = self.F[i]
                 J = F.determinant()
                 tau = ti.Matrix.zero(ti.f32,2,2)
-                g = 1.0
-                # tau = kirchhoff
-                B = F @ F.transpose()
-                devB = B - ti.Matrix.identity(ti.f32,2) * 1.0 / 2.0 * B.trace()
-                tauDev = self.mu * ti.pow(J, -2.0 / 2.0) * devB
-                prime = self.kappa / 2.0 * (J - 1.0 / J)
-                tauVol = J * prime * ti.Matrix.identity(ti.f32,2)
-                if (J >= 1.0):
-                    tau = g * (tauDev + tauVol)
-                else:
-                    tau = g * tauDev + tauVol
-                cauchy = tau / J
+                # # tau = kirchhoff
+                # B = F @ F.transpose()
+                # devB = B - ti.Matrix.identity(ti.f32,2) * 1.0 / 2.0 * B.trace()
+                # tauDev = self.mu * ti.pow(J, -2.0 / 2.0) * devB
+                # prime = self.kappa / 2.0 * (J - 1.0 / J)
+                # tauVol = J * prime * ti.Matrix.identity(ti.f32,2)
+                # tau = (tauDev + tauVol)
+                # cauchy = tau / J
+                cauchy = 1 / J * self.mu * (F @ F.transpose() - ti.Matrix.identity(ti.f32,2)) + self.lamb * ti.log(J) * ti.Matrix.identity(ti.f32,2)
                 eigenValues, _ = ti.eig(cauchy, ti.f32)
                 # print(eigenValues)
-                sigmaMax = eigenValues[0, 0]
+                sigmaMax = ti.max(ti.abs(eigenValues[0, 0]), ti.abs(eigenValues[1, 0]))
                 newCi = ci
                 if (sigmaMax > self.sigmaF):
                     # print('###', self.sigmaF / sigmaMax)
                     newCi = ti.min(ci, self.sigmaF / sigmaMax)
                 self.phaseC[i] = newCi
                 self.phaseG[i] = newCi * newCi * (1 - self.phaseK) + self.phaseK
+
+                self.color[i] = ti.Vector([sigmaMax / self.sigmaF, 0.0, 0.0])
         
     def update(self, dt):
         self.updateTime(dt)
@@ -233,8 +268,7 @@ class SolverMpm2(SolverBase2):
         self.solvePhaseNaive(dt)
         self.computeExternal(dt)
         self.gridToParticle(dt)
-
-        # self.computeCollision(dt)
+        self.computeCollision(dt)
         # self.computeGravity(dt)
         # self.updateVelocity(dt)
 
