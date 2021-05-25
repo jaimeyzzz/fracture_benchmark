@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
@@ -33,6 +34,7 @@ neighborSearch = NeighborSearch3(scene.lowerBound, scene.upperBound, scene.r * 2
 solver = None
 if SOLVER_NAME == 'bdem':
     M = 100
+    scene.cfl = 0.02
     # scene.mMin *= 0.1
     solver = SolverBdem3(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
@@ -48,7 +50,7 @@ elif SOLVER_NAME == 'peridynamics':
     solver = SolverPeridynamics3(scene, neighborSearch)
     pass
 elif SOLVER_NAME == 'mpm':
-    scene.cfl *= 0.1
+    scene.cfl = 0.2
     solver = SolverMpm3(scene, neighborSearch)
     pass
     
@@ -67,15 +69,23 @@ def dump(solver, frameIdx):
     # writer.export_frame(frameIdx, 'output/surface')
 
     #solver.setColor()
-    npPos = solver.position.to_numpy()
+    npPosition = solver.position.to_numpy()
     npRadiuses = solver.radius.to_numpy()
+    npLabel = solver.label.to_numpy()
     npMass = solver.mass.to_numpy()
+    
     # npColor = solver.color.to_numpy().reshape((-1,4))
+    npColor = solver.color.to_numpy()
+    colors = np.zeros((solver.N, 4), dtype=np.float32)
+    for i, color in enumerate(npColor):
+        colors[i, 3] = 1.0
+        if npLabel[i] == solver.scene.FLUID:
+            colors[i] = np.array(plt.cm.jet(color[0]))
     npV = solver.velocity.to_numpy()
     # npW = solver.angularVelocity.to_numpy()
     # ply writer
     writer = ti.PLYWriter(num_vertices=solver.N)
-    writer.add_vertex_pos(npPos[:,0], npPos[:,1], npPos[:,2])
+    writer.add_vertex_pos(npPosition[:,0], npPosition[:,1], npPosition[:,2])
     writer.add_vertex_channel("pscale", "double", npRadiuses.reshape((-1,1)))
     writer.add_vertex_channel("m", "double", npMass.reshape((-1,1)))
     writer.add_vertex_channel("vx", "double", npV[:,0])
@@ -84,7 +94,7 @@ def dump(solver, frameIdx):
     # writer.add_vertex_channel("wx", "double", npW[:,0])
     # writer.add_vertex_channel("wy", "double", npW[:,1])
     # writer.add_vertex_channel("wz", "double", npW[:,2])
-    # writer.add_vertex_rgba(npColor[:,0],npColor[:,1],npColor[:,2],npColor[:,3])
+    writer.add_vertex_rgba(colors[:,0],colors[:,1],colors[:,2],colors[:,3])
     #writer.add_faces(solver.triangles)
     writer.export_frame(frameIdx, outputDir+'frame')
     print('[DEM] dump frame {}'.format(frameIdx))

@@ -99,6 +99,13 @@ class SolverMpm2(SolverBase2):
             self.F[i] = (ti.Matrix.identity(float, 2) + dt * Ci) @ self.F[i] # deformation gradient update
             F = self.F[i]
             J = F.determinant()
+
+            cauchy = 1 / J * self.mu * (F @ F.transpose() - ti.Matrix.identity(ti.f32,2)) + self.lamb * ti.log(J) * ti.Matrix.identity(ti.f32,2)
+            eigenValues, _ = ti.eig(cauchy, ti.f32)
+            # sigmaMax = ti.max(ti.abs(eigenValues[0, 0]), ti.abs(eigenValues[1, 0]))
+            sigmaMax = 0.5 * (ti.abs(eigenValues[0, 0]) + ti.abs(eigenValues[1, 0]))
+            self.color[i] = ti.Vector([sigmaMax / self.sigmaF, 0.0, 0.0])
+
             B = F @ F.transpose()
             devB = B - ti.Matrix.identity(ti.f32,2) * 1.0 / 2.0 * B.trace()
             tauDev = self.mu * ti.pow(J, -2.0 / 2.0) * devB
@@ -109,7 +116,7 @@ class SolverMpm2(SolverBase2):
                 tau = g * (tauDev + tauVol)
             else:
                 tau = g * tauDev + tauVol
-            stress = tau
+            stress = tau.transpose()
             stress = (-dt * self.particleVol * 4 / dx / dx) * stress
             affine = stress + mi * Ci
             for j, k in ti.static(ti.ndrange(3, 3)): # Loop over 3x3 grid node neighborhood
@@ -123,7 +130,7 @@ class SolverMpm2(SolverBase2):
     def computeExternal(self, dt: ti.f32):
         radius = 0.0375
         offset = -0.375
-        height = 0.013125
+        height = 0.13125
         cy = 0.16 - self.t[0] * 0.1
         for i, j in self.gridMass:
             dx = self.gridSpacing
@@ -156,7 +163,7 @@ class SolverMpm2(SolverBase2):
         cy = 0.16 - self.t[0] * 0.1
         radius = 0.0375
         offset = -0.375
-        height = 0.013125
+        height = 0.13125
         for i in self.position:
             li = self.label[i]
             if li != self.scene.FLUID: continue
@@ -253,20 +260,20 @@ class SolverMpm2(SolverBase2):
                 self.phaseC[i] = newCi
                 self.phaseG[i] = newCi * newCi * (1 - self.phaseK) + self.phaseK
 
-                self.color[i] = ti.Vector([sigmaMax / self.sigmaF, 0.0, 0.0])
+                # self.color[i] = ti.Vector([sigmaMax / self.sigmaF, 0.0, 0.0])
         
     def update(self, dt):
         self.updateTime(dt)
 
-        self.deleteParticles(dt)
+        # self.deleteParticles(dt)
 
         self.updatePosition(dt)
         # self.updateNeighbors()
         self.load.fill(0)
 
         self.particleToGrid(dt)
-        self.solvePhaseNaive(dt)
         self.computeExternal(dt)
+        self.solvePhaseNaive(dt)
         self.gridToParticle(dt)
         self.computeCollision(dt)
         # self.computeGravity(dt)

@@ -15,7 +15,8 @@ from solver_mpm2 import SolverMpm2
 from solver_peridynamics2 import SolverPeridynamics2
 
 #ti.init(debug=True, log_level=ti.TRACE)
-ti.init(arch=ti.cpu, debug=True, default_fp=ti.f32)
+# ti.init(arch=ti.cpu, debug=True, default_fp=ti.f32)
+ti.init(arch=ti.gpu, default_fp=ti.f32)
 
 SCENE_FOLDER = 'scene2'
 SCENE_NAME = sys.argv[1]
@@ -36,16 +37,16 @@ solver = SolverBase2(scene, neighborSearch)
 # EIGENS
 from scipy.sparse import csr_matrix
 from scipy.sparse import csgraph
-from scipy.sparse.linalg import eigs
+from scipy.sparse.linalg import eigs, eigsh
 
 data = np.ones(solver.indices.shape)
 G = csr_matrix((data,solver.indices,solver.inclusive),shape=(solver.N,solver.N))
 L = csgraph.laplacian(G)
-vals, _ = eigs(L, k=1)
+vals, _ = eigsh(L, k=1)
 M = vals[0]
 
 if SOLVER_NAME == 'bdem':
-    scene.cfl = 0.05
+    scene.cfl = 0.02
     solver = SolverBdem2(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
     scene.cfl = 0.2

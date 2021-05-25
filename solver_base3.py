@@ -35,6 +35,7 @@ class SolverBase3:
         self.bonds = ti.Vector.field(6, ti.f32)
         self.strings = ti.Vector.field(3, ti.f32)
         self.oldStrings = ti.Vector.field(3, ti.f32)
+        self.color = ti.Vector.field(3, ti.f32)
         # PARAMS
         self.t = ti.field(ti.f32)
         self.gravity = ti.Vector.field(3, ti.f32)
@@ -52,6 +53,7 @@ class SolverBase3:
         ti.root.dense(ti.i, self.N).dense(ti.j, scene.MAX_NEIGHBOR_NUM).place(self.oldNeighbors)
         ti.root.dense(ti.i, self.N).dense(ti.j, scene.MAX_NEIGHBOR_NUM).place(self.strings)
         ti.root.dense(ti.i, self.N).dense(ti.j, scene.MAX_NEIGHBOR_NUM).place(self.oldStrings)
+        ti.root.dense(ti.i, self.N).place(self.color)
 
         ti.root.dense(ti.i, self.N + 1).place(self.bondsAccum)
         ti.root.dense(ti.i, self.M).place(self.bonds)

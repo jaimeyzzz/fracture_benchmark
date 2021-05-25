@@ -278,28 +278,23 @@ class SolverBdem3(SolverBase3):
     @ti.kernel
     def updatePosition(self, dt: ti.f64):
         for i in self.position:
+            li = self.label[i]
+            if li != self.scene.FLUID:
+                pi = self.position[i]
+                speed = 1.0 * 2.0 * np.pi
+                if pi[0] < 0.0:
+                    speed = -1.0 * speed
+                axis = ti.Vector([speed, 0.0, 0.0])
+                self.velocity[i] = axis.cross(self.position[i])
+                self.velocityMid[i] = axis.cross(self.position[i])
+
+        for i in self.position:
             self.force[i] = ti.Vector([0.0, 0.0, 0.0])
             self.torsion[i] = ti.Vector([0.0, 0.0, 0.0])
             self.position[i] += self.velocityMid[i] * dt; 
             wi = self.angularVelocityMid[i]
             wt = makeRotation(wi.norm() * dt, normalize(wi))
             self.rotation[i] = normalize(compose(wt, self.rotation[i]))
-
-            li = self.label[i]
-            if li != self.scene.FLUID:
-                speed = 1.0
-                pi = self.position[i]
-                theta = -speed*2.0*np.pi*dt
-                if pi[0] < 0.0:
-                    theta = -1.0 * theta
-                tx = pi[2]
-                ty = pi[1]
-                c = ti.cos(theta)
-                s = ti.sin(theta)
-                self.position[i][2] = c * tx - s * ty
-                self.position[i][1] = s * tx + c * ty
-                axis = ti.Vector([-1.0, 0.0, 0.0])
-                self.velocity[i] = self.velocityMid[i]+speed*2.0*np.pi*axis.cross(self.position[i])
 
     @ti.kernel
     def updateVelocity(self, dt: ti.f32):
