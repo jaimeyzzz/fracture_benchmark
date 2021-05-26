@@ -29,12 +29,14 @@ class SolverBase3:
         self.oldNeighbors = ti.field(ti.i32)
         # VECTORS
         self.position = ti.Vector.field(3, ti.f32)
+        self.positionInitial = ti.Vector.field(3, ti.f32)
         self.velocity = ti.Vector.field(3, ti.f32)
         self.velocityMid = ti.Vector.field(3, ti.f32)
         self.force = ti.Vector.field(3, ti.f32)
         self.bonds = ti.Vector.field(6, ti.f32)
         self.strings = ti.Vector.field(3, ti.f32)
         self.oldStrings = ti.Vector.field(3, ti.f32)
+        self.color = ti.Vector.field(3, ti.f32)
         # PARAMS
         self.t = ti.field(ti.f32)
         self.gravity = ti.Vector.field(3, ti.f32)
@@ -42,6 +44,7 @@ class SolverBase3:
         ti.root.dense(ti.i, self.N).place(self.mass)
         ti.root.dense(ti.i, self.N).place(self.radius)
         ti.root.dense(ti.i, self.N).place(self.position)
+        ti.root.dense(ti.i, self.N).place(self.positionInitial)
         ti.root.dense(ti.i, self.N).place(self.velocity)
         ti.root.dense(ti.i, self.N).place(self.velocityMid)
         ti.root.dense(ti.i, self.N).place(self.force)
@@ -52,6 +55,7 @@ class SolverBase3:
         ti.root.dense(ti.i, self.N).dense(ti.j, scene.MAX_NEIGHBOR_NUM).place(self.oldNeighbors)
         ti.root.dense(ti.i, self.N).dense(ti.j, scene.MAX_NEIGHBOR_NUM).place(self.strings)
         ti.root.dense(ti.i, self.N).dense(ti.j, scene.MAX_NEIGHBOR_NUM).place(self.oldStrings)
+        ti.root.dense(ti.i, self.N).place(self.color)
 
         ti.root.dense(ti.i, self.N + 1).place(self.bondsAccum)
         ti.root.dense(ti.i, self.M).place(self.bonds)
@@ -63,6 +67,7 @@ class SolverBase3:
     
     def init(self):
         self.position.from_numpy(self.scene.position)
+        self.positionInitial.from_numpy(self.scene.position)
         self.velocity.from_numpy(self.scene.velocity)
         self.velocityMid.from_numpy(self.scene.velocity)
         self.mass.from_numpy(self.scene.mass)
@@ -101,6 +106,21 @@ class SolverBase3:
             if li == self.scene.FLUID:
                 mi = self.mass[i]
                 self.force[i] += self.gravity[0] * mi
+    @ti.kernel
+    def computeLocalDamping(self, dt: ti.f32):
+        for i in self.position:
+            li = self.label[i]
+            if li == self.scene.FLUID:
+                signV = ti.Vector([1.0,1.0,1.0])
+                signW = ti.Vector([1.0,1.0,1.0])
+                for j in ti.static(range(3)):
+                    if self.velocity[i][j] < 0.0:
+                        signV[j] = -1.0
+                    if self.angularVelocity[i][j] < 0.0:
+                        signW[j] = -1.0
+                self.force[i] -= self.scene.gammag * abs(self.force[i]) * signV
+                self.torsion[i] -= self.scene.gammag * abs(self.torsion[i]) * signW
+
                 
     @ti.kernel
     def updatePosition(self, dt: ti.f32):

@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
@@ -6,6 +7,7 @@ import time
 
 from neighbor_search3 import NeighborSearch3
 from scene import Scene
+from solver_base3 import SolverBase3
 from solver_bdem3 import SolverBdem3
 from solver_dem3 import SolverDem3
 from solver_mass_spring3 import SolverMassSpring3
@@ -30,27 +32,33 @@ except OSError as error:
     print(error)   
 
 neighborSearch = NeighborSearch3(scene.lowerBound, scene.upperBound, scene.r * 2.0)
-solver = None
+solver = SolverBase3(scene, neighborSearch)
+# EIGENS
+from scipy.sparse import csr_matrix
+from scipy.sparse import csgraph
+from scipy.sparse.linalg import eigs, eigsh
+
+data = np.ones(solver.indices.shape)
+G = csr_matrix((data,solver.indices,solver.inclusive),shape=(solver.N,solver.N))
+L = csgraph.laplacian(G)
+vals, _ = eigsh(L, k=1)
+M = vals[0]
+
 if SOLVER_NAME == 'bdem':
-    M = 100
-    # scene.mMin *= 0.1
+    scene.cfl = 0.2
     solver = SolverBdem3(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
+    scene.kn /= 10.0
     solver = SolverMassSpring3(scene, neighborSearch)
-    M = 100
-    pass
 elif SOLVER_NAME == 'peridynamics':
-    scene.kn = 1e4
-    scene.kt = 1e4
-    M = 42
+    scene.kn /= 100.0
     solver = SolverPeridynamics3(scene, neighborSearch)
-    pass
 elif SOLVER_NAME == 'mpm':
-    scene.cfl *= 0.1
+    scene.cfl = 0.2
+    M = 1
     solver = SolverMpm3(scene, neighborSearch)
-    pass
     
 def dump(solver, frameIdx):
     # solver.surface()
@@ -67,24 +75,33 @@ def dump(solver, frameIdx):
     # writer.export_frame(frameIdx, 'output/surface')
 
     #solver.setColor()
-    npPos = solver.position.to_numpy()
+    npPosition = solver.position.to_numpy()
     npRadiuses = solver.radius.to_numpy()
+    npLabel = solver.label.to_numpy()
     npMass = solver.mass.to_numpy()
+    
     # npColor = solver.color.to_numpy().reshape((-1,4))
+    npColor = solver.color.to_numpy().reshape((-1,3))
+    colors = np.zeros((solver.N, 4), dtype=np.float32)
+    for i, color in enumerate(npColor):
+        colors[i, 3] = 1.0
+        if npLabel[i] == solver.scene.FLUID:
+            colors[i] = np.array(plt.cm.jet(color[0]))
     npV = solver.velocity.to_numpy()
     # npW = solver.angularVelocity.to_numpy()
     # ply writer
     writer = ti.PLYWriter(num_vertices=solver.N)
-    writer.add_vertex_pos(npPos[:,0], npPos[:,1], npPos[:,2])
+    writer.add_vertex_pos(npPosition[:,0], npPosition[:,1], npPosition[:,2])
     writer.add_vertex_channel("pscale", "double", npRadiuses.reshape((-1,1)))
     writer.add_vertex_channel("m", "double", npMass.reshape((-1,1)))
     writer.add_vertex_channel("vx", "double", npV[:,0])
     writer.add_vertex_channel("vy", "double", npV[:,1])
     writer.add_vertex_channel("vz", "double", npV[:,2])
+    writer.add_vertex_channel("stress", "double", npColor[:,0])
     # writer.add_vertex_channel("wx", "double", npW[:,0])
     # writer.add_vertex_channel("wy", "double", npW[:,1])
     # writer.add_vertex_channel("wz", "double", npW[:,2])
-    # writer.add_vertex_rgba(npColor[:,0],npColor[:,1],npColor[:,2],npColor[:,3])
+    writer.add_vertex_rgba(colors[:,0],colors[:,1],colors[:,2],colors[:,3])
     #writer.add_faces(solver.triangles)
     writer.export_frame(frameIdx, outputDir+'frame')
     print('[DEM] dump frame {}'.format(frameIdx))
@@ -96,6 +113,7 @@ solver.init()
 """ RUN SIMULATION """
 gui = ti.GUI('demo', (WINDOW_SIZE, WINDOW_SIZE), background_color=0xFFFFFF)
 k = np.max([scene.kc, scene.kn * scene.rMax * M * M])
+# k = np.max([scene.kc, scene.kn * scene.rMax])
 print('Stiffness : ', k)
 dt = np.sqrt(0.5 * scene.mMin / k) * scene.cfl
 print('Sub Timestep : ', dt)
