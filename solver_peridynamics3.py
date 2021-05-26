@@ -102,6 +102,7 @@ class SolverPeridynamics3(SolverBase3):
             if li == self.scene.FLUID:
                 mi = self.mass[i]
                 xi = self.position[i]
+                ri = self.radius[i]
                 f = ti.Vector([0.0, 0.0, 0.0])
                 sigmaSum = 0.0
                 sigmaMax = 0.0
@@ -117,6 +118,8 @@ class SolverPeridynamics3(SolverBase3):
                     l = dx.norm()
                     n = dx / l
                     fn = -self.kn * (l / l0 - 1.0) * n
+                    rj = self.radius[j]
+                    rij = 0.5 * (ri + rj)
                     sigma = fn.norm() / np.pi / rij**2
                     sigmaMax = ti.max(sigma, sigmaMax)
                     sigmaSum += sigma
@@ -128,7 +131,7 @@ class SolverPeridynamics3(SolverBase3):
                 if sigmaCount == 0:
                     self.color[i] = [0.0, 0.0, 0.0]
                 else:
-                    self.color[i] = [sigmaMax / self.sigmac / self.kn, 0.0, 0.0]
+                    self.color[i] = [sigmaMax / self.sigmac / self.kn / 100.0, 0.0, 0.0]
                 
 
     @ti.kernel

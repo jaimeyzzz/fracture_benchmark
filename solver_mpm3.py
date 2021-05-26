@@ -236,7 +236,7 @@ class SolverMpm3(SolverBase3):
                     newCi = ti.min(ci, self.sigmaF / sigmaMax)
                 self.phaseC[i] = newCi
                 # self.phaseG[i] = newCi * newCi * (1 - self.phaseK) + self.phaseK
-                self.color[i] = ti.Vector([sigmaMax / self.sigmaF, 0.0, 0.0])
+                self.color[i] = ti.Vector([sigmaMax / self.sigmaF / 20.0, 0.0, 0.0])
                 # self.color[i] = ti.Vector([newCi, 0.0, 0.0])
 
     def update(self, dt):

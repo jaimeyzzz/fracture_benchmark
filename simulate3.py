@@ -81,7 +81,7 @@ def dump(solver, frameIdx):
     npMass = solver.mass.to_numpy()
     
     # npColor = solver.color.to_numpy().reshape((-1,4))
-    npColor = solver.color.to_numpy()
+    npColor = solver.color.to_numpy().reshape((-1,3))
     colors = np.zeros((solver.N, 4), dtype=np.float32)
     for i, color in enumerate(npColor):
         colors[i, 3] = 1.0
@@ -97,6 +97,7 @@ def dump(solver, frameIdx):
     writer.add_vertex_channel("vx", "double", npV[:,0])
     writer.add_vertex_channel("vy", "double", npV[:,1])
     writer.add_vertex_channel("vz", "double", npV[:,2])
+    writer.add_vertex_channel("stress", "double", npColor[:,0])
     # writer.add_vertex_channel("wx", "double", npW[:,0])
     # writer.add_vertex_channel("wy", "double", npW[:,1])
     # writer.add_vertex_channel("wz", "double", npW[:,2])
@@ -112,6 +113,7 @@ solver.init()
 """ RUN SIMULATION """
 gui = ti.GUI('demo', (WINDOW_SIZE, WINDOW_SIZE), background_color=0xFFFFFF)
 k = np.max([scene.kc, scene.kn * scene.rMax * M * M])
+# k = np.max([scene.kc, scene.kn * scene.rMax])
 print('Stiffness : ', k)
 dt = np.sqrt(0.5 * scene.mMin / k) * scene.cfl
 print('Sub Timestep : ', dt)
