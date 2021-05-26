@@ -15,7 +15,7 @@ SOLVER_NAME = sys.argv[2]
 scene = Scene(SCENE_FOLDER, SCENE_NAME)
 
 if SOLVER_NAME == 'bdem':
-    scene.h = scene.r * 2.01
+    scene.h = scene.r * 3.01
 elif SOLVER_NAME == 'dem':
     pass
 elif SOLVER_NAME == 'mass_spring':

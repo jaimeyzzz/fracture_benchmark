@@ -6,7 +6,7 @@ from solver_base3 import SolverBase3
 
 @ti.data_oriented
 class SolverMpm3(SolverBase3):
-    GRID_SIZE = 64
+    GRID_SIZE = 128
     def __init__(self, scene, neighborSearch):
         super().__init__(scene, neighborSearch)
         self.kn = scene.kn
@@ -19,7 +19,8 @@ class SolverMpm3(SolverBase3):
         self.E = self.kn
         self.nu = 0.25
         self.sigmaF = self.kn * self.scene.sigma
-        self.deleteThreshold = 0.01
+        self.phaseK = 0.001
+        self.deleteThreshold = self.phaseK * 2.0
         self.mu = self.E / 2.0 * (1.0 + self.nu)    
         self.lamb = self.E * self.nu / ((1.0 + self.nu) * (1.0 - 2.0 * self.nu))
         self.kappa = 2.0 / 3.0 * self.mu + self.lamb
@@ -39,8 +40,6 @@ class SolverMpm3(SolverBase3):
         self.phaseC = ti.field(ti.f32)
         self.phaseG = ti.field(ti.f32)
         self.sigmaMax = ti.field(ti.f32)
-        self.phaseK = 0.001
-        self.distance = ti.Vector.field(3, ti.f32)
 
         ti.root.dense(ti.i, self.N).place(self.C)
         ti.root.dense(ti.i, self.N).place(self.F)
@@ -49,7 +48,6 @@ class SolverMpm3(SolverBase3):
         ti.root.dense(ti.i, self.N).place(self.phaseG)
         ti.root.dense(ti.i, self.N).place(self.sigmaMax)
         ti.root.dense(ti.i, self.N).place(self.cauchy)
-        ti.root.dense(ti.i, self.N).place(self.distance)
         ti.root.dense(ti.ijk, (self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)).place(self.gridMass)
         ti.root.dense(ti.ijk, (self.GRID_SIZE, self.GRID_SIZE, self.GRID_SIZE)).place(self.gridVelocity)
    
@@ -69,7 +67,6 @@ class SolverMpm3(SolverBase3):
                 self.phaseG[i] = 1.0
             else:
                 self.mass[i] = self.particleMass #* 1e4
-                self.distance[i] = self.position[i]
 
     @ti.kernel
     def particleToGrid(self, dt: ti.f32):
@@ -164,8 +161,8 @@ class SolverMpm3(SolverBase3):
                 theta = speed * self.t[0]
                 c = ti.cos(theta)
                 s = ti.sin(theta)
-                tx = self.distance[i][2]
-                ty = self.distance[i][1]
+                tx = self.positionInitial[i][2]
+                ty = self.positionInitial[i][1]
                 self.position[i][2] = c * tx - s * ty
                 self.position[i][1] = s * tx + c * ty
                 axis = ti.Vector([speed, 0.0, 0.0])

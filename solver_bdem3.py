@@ -97,7 +97,7 @@ class SolverBdem3(SolverBase3):
             if li == self.scene.FLUID:
                 self.rotation[i] = [0.0, 0.0, 0.0, 1.0]
                 # self.mass[i] *= 0.1
-                self.momentOfInertia[i] = 2.0 / 5.0 * self.mass[i] * self.radius[i] ** 2
+                self.momentOfInertia[i] = 2.0 / 5.0 * self.mass[i] * (self.radius[i]**2)
    
     @ti.kernel
     def initBonds(self):
@@ -187,10 +187,15 @@ class SolverBdem3(SolverBase3):
                 Ii = self.momentOfInertia[i]
                 pi = self.position[i]
                 qi = self.rotation[i]
-                vi = self.velocityMid[i]
+                vi = self.velocity[i]
                 wi = self.angularVelocity[i]
                 force = ti.Vector([0.0, 0.0, 0.0])
                 torsion = ti.Vector([0.0, 0.0, 0.0])
+                sigmaSum = 0.0
+                sigmaMax = 0.0
+                taoSum = 0.0
+                taoMax = 0.0
+                sigmaCount = 0
                 for idx in range(self.bondsAccum[i], self.bondsAccum[i + 1]):
                     j = self.bondsIdx[idx]
                     state = self.bondsState[idx]
@@ -256,8 +261,13 @@ class SolverBdem3(SolverBase3):
                     # fracture
                     sigma = (fn + fnDamp).norm() / s0 + (mt + mtDamp).norm() * r0 / I0
                     tao = (ft + ftDamp).norm() / s0 + (ml + mlDamp).norm() * r0 / J0
+                    sigmaSum += sigma
+                    taoSum += tao
+                    sigmaCount += 1
+                    sigmaMax = ti.max(sigmaMax, sigma / sigma0)
+                    taoMax = ti.max(taoMax, tao / tao0)
                     if (((dl > 0.0) and sigma > sigma0) or tao > tao0):
-                        self.bondsState[i] = 3
+                        self.bondsState[idx] = self.scene.BOND_BROKEN
                         # print(i, j, ' | ',sigma, tao, thetaij, ' | ', fn.norm(), ft.norm(), ml.norm(), mt.norm())
                     force += fn + ft
                     force += fnDamp + ftDamp
@@ -266,28 +276,15 @@ class SolverBdem3(SolverBase3):
                     torsion += (ft + ftDamp).cross(-0.5 * l * n)
                 self.force[i] += force
                 self.torsion[i] += torsion
-        # bond crack
-        for i in self.position:
-            li = self.label[i]
-            if li != self.scene.FLUID: continue
-            for idx in range(self.bondsAccum[i], self.bondsAccum[i + 1]):
-                bsi = self.bondsState[i]
-                if bsi == 3:
-                    self.bondsState[i] = self.scene.BOND_BROKEN
+                if sigmaCount == 0:
+                    self.color[i] = [0.0, 0.0, 0.0]
+                else:
+                    self.color[i] = ti.Vector([0.5 * (sigmaMax + taoMax), 0.0, 0.0])
+                    # self.color[i] = ti.Vector([sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0])
+                    # self.color[i] = ti.Vector([taoSum / sigmaCount / self.tauc / self.kt, 0.0, 0.0])
             
     @ti.kernel
     def updatePosition(self, dt: ti.f64):
-        for i in self.position:
-            li = self.label[i]
-            if li != self.scene.FLUID:
-                pi = self.position[i]
-                speed = 1.0 * 2.0 * np.pi
-                if pi[0] < 0.0:
-                    speed = -1.0 * speed
-                axis = ti.Vector([speed, 0.0, 0.0])
-                self.velocity[i] = axis.cross(self.position[i])
-                self.velocityMid[i] = axis.cross(self.position[i])
-
         for i in self.position:
             self.force[i] = ti.Vector([0.0, 0.0, 0.0])
             self.torsion[i] = ti.Vector([0.0, 0.0, 0.0])
@@ -295,6 +292,22 @@ class SolverBdem3(SolverBase3):
             wi = self.angularVelocityMid[i]
             wt = makeRotation(wi.norm() * dt, normalize(wi))
             self.rotation[i] = normalize(compose(wt, self.rotation[i]))
+
+            li = self.label[i]
+            if li != self.scene.FLUID:
+                speed = 1.0 * 2.0 * np.pi
+                pi = self.position[i]
+                if pi[0] > 0.0:
+                    speed = -speed
+                theta = speed * self.t[0]
+                c = ti.cos(theta)
+                s = ti.sin(theta)
+                tx = self.positionInitial[i][2]
+                ty = self.positionInitial[i][1]
+                self.position[i][2] = c * tx - s * ty
+                self.position[i][1] = s * tx + c * ty
+                axis = ti.Vector([speed, 0.0, 0.0])
+                self.velocity[i] = -axis.cross(self.position[i])
 
     @ti.kernel
     def updateVelocity(self, dt: ti.f32):
@@ -320,6 +333,7 @@ class SolverBdem3(SolverBase3):
         self.load.fill(0)
         self.computeCollision(dt)
         self.computeGravity(dt)
+        self.computeLocalDamping(dt)
         # self.computeBoundary(dt)
 
         self.updateVelocity(dt)

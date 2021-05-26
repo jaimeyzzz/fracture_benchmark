@@ -25,8 +25,8 @@ class Scene:
 
         self.lowerBound = np.float32([-0.5, -0.5, -0.5])
         self.upperBound = np.float32([0.5, 0.5, 0.5])
-        # self.gravity = np.float32([0.0, -9.81, 0.0])
-        self.gravity = np.float32([0.0, 0.0, 0.0])
+        self.gravity = np.float32([0.0, -9.81, 0.0])
+        # self.gravity = np.float32([0.0, 0.0, 0.0])
 
         self.npzFile = os.path.join(path, name, '{}.npz'.format(name))
         self.importYaml(os.path.join(path, name, '{}.yaml'.format(name)))
@@ -46,6 +46,7 @@ class Scene:
         self.cfl = data['cfl']
         self.fps = data['fps']
         self.gammac = data['dampingRatio']
+        self.gammag = data['globalDampingRatio']
         self.rho = data['density']
         # bond
         self.range = data['bondRange']

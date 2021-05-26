@@ -103,6 +103,9 @@ class SolverPeridynamics3(SolverBase3):
                 mi = self.mass[i]
                 xi = self.position[i]
                 f = ti.Vector([0.0, 0.0, 0.0])
+                sigmaSum = 0.0
+                sigmaMax = 0.0
+                sigmaCount = 0
                 for idx in range(self.bondsAccum[i], self.bondsAccum[i + 1]):
                     j = self.bondsIdx[idx]
                     state = self.bondsState[idx]
@@ -114,11 +117,19 @@ class SolverPeridynamics3(SolverBase3):
                     l = dx.norm()
                     n = dx / l
                     fn = -self.kn * (l / l0 - 1.0) * n
-                    tao = fn.norm()
+                    sigma = fn.norm() / np.pi / rij**2
+                    sigmaMax = ti.max(sigma, sigmaMax)
+                    sigmaSum += sigma
+                    sigmaCount += 1
                     if l / l0 - 1.0 > self.sigmac:
                         self.bondsState[idx] = self.scene.BOND_BROKEN
                     f += fn                   
                 self.force[i] += f
+                if sigmaCount == 0:
+                    self.color[i] = [0.0, 0.0, 0.0]
+                else:
+                    self.color[i] = [sigmaMax / self.sigmac / self.kn, 0.0, 0.0]
+                
 
     @ti.kernel
     def updatePosition(self, dt: ti.f32):

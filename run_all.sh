@@ -1,0 +1,1 @@
+./run3.sh twist_small mpm 100 && ./run3.sh twist mpm 100 && ./run3.sh twist_small bdem 100 && ./run3.sh twist bdem 100 && ./run3.sh twist_small mass_spring 100 && ./run3.sh twist mass_spring 100 && ./run3.sh twist_small peridynamics 100 && ./run3.sh twist peridynamics 100
