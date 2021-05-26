@@ -45,7 +45,7 @@ vals, _ = eigs(L, k=1)
 M = vals[0]
 
 if SOLVER_NAME == 'bdem':
-    scene.cfl = 0.05
+    scene.cfl = 0.2
     solver = SolverBdem2(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
     scene.cfl = 0.2
@@ -55,7 +55,7 @@ elif SOLVER_NAME == 'peridynamics':
     scene.kn /= 100.0
     solver = SolverPeridynamics2(scene, neighborSearch)
 elif SOLVER_NAME == 'mpm':
-    scene.cfl = 0.2
+    scene.cfl = 1.0
     M = 1
     solver = SolverMpm2(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':

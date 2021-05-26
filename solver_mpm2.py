@@ -22,7 +22,7 @@ class SolverMpm2(SolverBase2):
         self.lamb = self.E * self.nu / ((1.0 + self.nu) * (1.0 - 2.0 * self.nu))
         self.kappa = 2.0 / 3.0 * self.mu + self.lamb
 
-        self.sigmaF = 1.0e6
+        self.sigmaF = 1.25e6
         self.deleteThreshold = 0.1
 
         self.particleVol = (self.gridSpacing * 0.5)**2
@@ -123,7 +123,7 @@ class SolverMpm2(SolverBase2):
     def computeExternal(self, dt: ti.f32):
         radius = 0.0375
         offset = -0.375
-        height = 0.013125
+        height = 0.13125
         cy = 0.16 - self.t[0] * 0.1
         for i, j in self.gridMass:
             dx = self.gridSpacing
@@ -144,7 +144,7 @@ class SolverMpm2(SolverBase2):
                     dist = dist.normalized()
                     deltaV = -dist * min(0, self.gridVelocity[i, j].dot(dist)) + [0.0, -0.1]
                     self.gridVelocity[i, j] += deltaV
-                    self.load[0] += deltaV * self.gridMass[i, j] / dt
+                    self.load[0] += deltaV * self.gridMass[i, j] / dt / 0.5
 
                 if i < 3 and self.gridVelocity[i, j][0] < 0:          self.gridVelocity[i, j][0] = 0 # Boundary conditions
                 if i > self.GRID_SIZE - 3 and self.gridVelocity[i, j][0] > 0: self.gridVelocity[i, j][0] = 0
@@ -156,7 +156,7 @@ class SolverMpm2(SolverBase2):
         cy = 0.16 - self.t[0] * 0.1
         radius = 0.0375
         offset = -0.375
-        height = 0.013125
+        height = 0.13125
         for i in self.position:
             li = self.label[i]
             if li != self.scene.FLUID: continue
@@ -181,7 +181,7 @@ class SolverMpm2(SolverBase2):
                 deltaV = -dist * min(0, self.velocity[i].dot(dist)) + [0.0, -0.1]
                 self.velocity[i] += deltaV
                 self.position[i] += deltaV * dt
-                self.load[0] += deltaV * self.mass[i] / dt
+                self.load[0] += deltaV * self.mass[i] / dt * 0.5
 
     @ti.kernel
     def gridToParticle(self, dt: ti.f32):
@@ -258,7 +258,7 @@ class SolverMpm2(SolverBase2):
     def update(self, dt):
         self.updateTime(dt)
 
-        self.deleteParticles(dt)
+        # self.deleteParticles(dt)
 
         self.updatePosition(dt)
         # self.updateNeighbors()
