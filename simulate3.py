@@ -50,10 +50,10 @@ if SOLVER_NAME == 'bdem':
 elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
+    scene.kn /= 10.0
     solver = SolverMassSpring3(scene, neighborSearch)
 elif SOLVER_NAME == 'peridynamics':
-    scene.kn = 1e4
-    scene.kt = 1e4
+    scene.kn /= 100.0
     solver = SolverPeridynamics3(scene, neighborSearch)
 elif SOLVER_NAME == 'mpm':
     scene.cfl = 0.2

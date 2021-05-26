@@ -16,7 +16,7 @@ class SolverMpm3(SolverBase3):
         self.us = scene.us
         self.h = scene.h
         self.gridSpacing = np.max(scene.upperBound - scene.lowerBound) / self.GRID_SIZE
-        self.E = self.kn
+        self.E = self.kn * 10
         self.nu = 0.25
         self.sigmaF = self.kn * self.scene.sigma
         self.phaseK = 0.001

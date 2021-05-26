@@ -21,7 +21,7 @@ elif SOLVER_NAME == 'dem':
 elif SOLVER_NAME == 'mass_spring':
     scene.h = scene.r * 3.01
 elif SOLVER_NAME == 'peridynamics':
-    scene.h = scene.r * 6.01
+    scene.h = scene.r * 4.01
 
 N = scene.N
 bondsNum = ti.field(ti.i32)
@@ -78,14 +78,14 @@ for i in range(N):
         indices[j] = npBondsIdx[i][idx]
 np.savez_compressed(filepath, inclusive=inclusive, indices=indices)
 
-# EIGENS
-from scipy.sparse import csr_matrix
-from scipy.sparse import csgraph
-from scipy.sparse.linalg import eigs
+# # EIGENS
+# from scipy.sparse import csr_matrix
+# from scipy.sparse import csgraph
+# from scipy.sparse.linalg import eigs
 
-data = np.ones(indices.shape)
-G = csr_matrix((data,indices,inclusive),shape=(N,N))
-L = csgraph.laplacian(G)
+# data = np.ones(indices.shape)
+# G = csr_matrix((data,indices,inclusive),shape=(N,N))
+# L = csgraph.laplacian(G)
 
-vals, vecs = eigs(L, k=6)
-print(vals)
+# vals, vecs = eigs(L, k=6)
+# print(vals)

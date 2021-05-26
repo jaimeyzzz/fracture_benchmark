@@ -13,7 +13,7 @@ class Scene:
     BOND_VALID = 0
     BOND_BROKEN = 1
 
-    MAX_BONDS_NUM = 256
+    MAX_BONDS_NUM = 512
     MAX_NEIGHBOR_NUM = 32
     def __init__(self, path, name):
         self.mass = np.array([], dtype=float)
