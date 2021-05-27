@@ -6,8 +6,8 @@ plt.style.use('ggplot')
 sceneNames = ['bending', 'bending_fine']
 solverNames = ['bdem2']
 # solverNames = ['mass_spring2', 'bdem2', 'peridynamics2', 'mpm2']
-solverNames = ['mpm2']
-# solverNames = ['peridynamics2']
+# solverNames = ['mpm2']
+solverNames = ['peridynamics2']
 
 def plotAll():
     for sceneName in sceneNames:

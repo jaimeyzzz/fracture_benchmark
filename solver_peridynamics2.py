@@ -14,6 +14,10 @@ class SolverPeridynamics2(SolverBase2):
         self.gammac = scene.gammac
         self.us = scene.us
         self.h = scene.h
+        self.G_0 = self.kn * scene.sigma
+
+        self.c = 9.0 * self.kn / np.pi / 1.0 / (self.h)**3 * 4.0 * scene.rMin**4 * np.pi
+        # self.sigmac = np.sqrt(4.0 * np.pi * self.G_0 / 9.0 / self.kn / self.h)
         self.sigmac = scene.sigma
 
     def init(self):
@@ -117,7 +121,8 @@ class SolverPeridynamics2(SolverBase2):
                     dx = xi - xj
                     l = dx.norm()
                     n = dx / l
-                    fn = -self.kn * (l / l0 - 1.0) * n
+                    fn = -self.c * (l / l0 - 1.0) * n
+
                     sigma = fn.norm() / 2.0 / (0.5 * (ri + rj))
                     sigmaSum += sigma
                     sigmaCount += 1

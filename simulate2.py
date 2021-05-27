@@ -53,7 +53,6 @@ elif SOLVER_NAME == 'mass_spring':
     solver = SolverMassSpring2(scene, neighborSearch)
 elif SOLVER_NAME == 'peridynamics':
     scene.cfl = 0.2
-    scene.kn /= 100.0
     solver = SolverPeridynamics2(scene, neighborSearch)
 elif SOLVER_NAME == 'mpm':
     scene.cfl = 1.0
@@ -68,7 +67,7 @@ solver.init()
 
 """ RUN SIMULATION """
 gui = ti.GUI('demo', (WINDOW_SIZE, WINDOW_SIZE), background_color=0xFFFFFF)
-k = np.max([scene.kc, scene.kn * scene.rMax * M * M])
+k = np.max([scene.kc, solver.c * scene.rMax * M * M])
 print('Stiffness : ', k)
 dt = np.sqrt(0.5 * scene.mMin / k) * scene.cfl
 print('Sub Timestep : ', dt)
