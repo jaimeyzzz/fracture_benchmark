@@ -16,7 +16,7 @@ class SolverPeridynamics3(SolverBase3):
         self.h = scene.h
         self.sigmac = scene.sigma
 
-        self.c = 12.0 * self.kn / np.pi / (self.h)**4 * scene.rMin**5 * (np.pi)**2
+        self.c = 12.0 * self.kn / np.pi / (self.h)**4 * scene.rMin**6 * (np.pi)**2 * 16.0 / 9.0
 
     def init(self):
         super().init()
@@ -127,7 +127,8 @@ class SolverPeridynamics3(SolverBase3):
                     sigmaSum += sigma
                     sigmaCount += 1
                     if l / l0 - 1.0 > self.sigmac:
-                        self.bondsState[idx] = self.scene.BOND_BROKEN
+                        1
+                        # self.bondsState[idx] = self.scene.BOND_BROKEN
                     f += fn                   
                 self.force[i] += f
                 if sigmaCount == 0:
