@@ -117,7 +117,7 @@ class SolverPeridynamics3(SolverBase3):
                     dx = xi - xj
                     l = dx.norm()
                     n = dx / l
-                    fn = -self.kn * (l / l0 - 1.0) * n
+                    fn = -self.c * (l / l0 - 1.0) * n
                     rj = self.radius[j]
                     rij = 0.5 * (ri + rj)
                     sigma = fn.norm() / np.pi / rij**2
@@ -131,7 +131,7 @@ class SolverPeridynamics3(SolverBase3):
                 if sigmaCount == 0:
                     self.color[i] = [0.0, 0.0, 0.0]
                 else:
-                    self.color[i] = [sigmaMax / self.sigmac / self.kn / 100.0, 0.0, 0.0]
+                    self.color[i] = [sigmaMax / self.sigmac / self.kn, 0.0, 0.0]
                 
 
     @ti.kernel
