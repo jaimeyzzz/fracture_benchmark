@@ -19,7 +19,7 @@ elif SOLVER_NAME == 'dem':
 elif SOLVER_NAME == 'mass_spring':
     scene.h = scene.r * 3.01
 elif SOLVER_NAME == 'peridynamics':
-    scene.h = scene.r * 6.01
+    scene.h = scene.r * 4.01
 
 N = scene.N
 bondsNum = ti.field(ti.i32)

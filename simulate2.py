@@ -16,13 +16,14 @@ from solver_peridynamics2 import SolverPeridynamics2
 
 #ti.init(debug=True, log_level=ti.TRACE)
 # ti.init(arch=ti.cpu, debug=True, default_fp=ti.f32)
-ti.init(arch=ti.gpu, default_fp=ti.f32)
+ti.init(arch=ti.cpu, default_fp=ti.f32)
+# ti.init(arch=ti.gpu, default_fp=ti.f32)
 
 SCENE_FOLDER = 'scene2'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
 NUM_FRAMES = int(sys.argv[3])
-WINDOW_SIZE = 1200
+WINDOW_SIZE = 640
 M = 1
 
 scene = Scene(SCENE_FOLDER, SCENE_NAME)

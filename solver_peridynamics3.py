@@ -16,6 +16,8 @@ class SolverPeridynamics3(SolverBase3):
         self.h = scene.h
         self.sigmac = scene.sigma
 
+        self.c = 12.0 * self.kn / np.pi / (self.h)**4 * scene.rMin**5 * (np.pi)**2
+
     def init(self):
         super().init()
         self.initBonds()
