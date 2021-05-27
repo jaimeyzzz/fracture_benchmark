@@ -22,7 +22,7 @@ SCENE_FOLDER = 'scene2'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
 NUM_FRAMES = int(sys.argv[3])
-WINDOW_SIZE = 640
+WINDOW_SIZE = 1200
 M = 1
 
 scene = Scene(SCENE_FOLDER, SCENE_NAME)
@@ -46,7 +46,7 @@ vals, _ = eigsh(L, k=1)
 M = vals[0]
 
 if SOLVER_NAME == 'bdem':
-    scene.cfl = 0.2
+    scene.cfl = 0.05
     solver = SolverBdem2(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
     scene.cfl = 0.2
@@ -100,9 +100,9 @@ while gui.running and frameIdx < NUM_FRAMES:
         c = np.uint32(np.array(plt.cm.jet(color[0])) * 255.0)
         colors[i] = (c[0] << 16) | (c[1] << 8) | c[2]
     print('color max : ', hex(np.max(colors)))
-    radius = WINDOW_SIZE * scene.r
-    gui.circles(npPosition[npLabel == 0], radius=radius, color=colors) # 0088ff
-    gui.circles(npPosition[npLabel != 0], radius=radius, color=0x000000)
+    npRadius = solver.radius.to_numpy() * WINDOW_SIZE
+    gui.circles(npPosition[npLabel == 0], radius=npRadius[npLabel == 0], color=colors) # 0088ff
+    gui.circles(npPosition[npLabel != 0], radius=npRadius[npLabel != 0], color=0x000000)
     # # draw bonds
     # npBondsIdx = solver.bondsIdx.to_numpy()
     # npBondsAccum = solver.bondsAccum.to_numpy()

@@ -279,9 +279,9 @@ class SolverBdem3(SolverBase3):
                 if sigmaCount == 0:
                     self.color[i] = [0.0, 0.0, 0.0]
                 else:
-                    self.color[i] = ti.Vector([0.5 * (sigmaMax + taoMax), 0.0, 0.0])
+                    # self.color[i] = ti.Vector([0.5 * (sigmaMax + taoMax), 0.0, 0.0])
                     # self.color[i] = ti.Vector([ti.max(sigmaMax, taoMax), 0.0, 0.0])
-                    # self.color[i] = ti.Vector([sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0])
+                    self.color[i] = ti.Vector([sigmaSum / sigmaCount / self.sigmac / self.kn, 0.0, 0.0])
                     # self.color[i] = ti.Vector([taoSum / sigmaCount / self.tauc / self.kt, 0.0, 0.0])
             
     @ti.kernel

@@ -13,7 +13,7 @@ SOLVER_NAME = sys.argv[2]
 scene = Scene(SCENE_FOLDER, SCENE_NAME)
 
 if SOLVER_NAME == 'bdem':
-    scene.h = scene.r * 2.01
+    scene.h = scene.rMax * 2.01
 elif SOLVER_NAME == 'dem':
     pass
 elif SOLVER_NAME == 'mass_spring':
@@ -26,13 +26,16 @@ bondsNum = ti.field(ti.i32)
 bondsIdx = ti.field(ti.i32)
 label = ti.field(ti.f32)
 position = ti.Vector.field(2, ti.f32)
+radius = ti.field(ti.f32)
 ti.root.dense(ti.i, N).place(bondsNum)
 ti.root.dense(ti.i, N).dense(ti.j, scene.MAX_BONDS_NUM).place(bondsIdx)
 ti.root.dense(ti.i, N).place(label)
 ti.root.dense(ti.i, N).place(position)
+ti.root.dense(ti.i, N).place(radius)
 bondSearch = NeighborSearch2(scene.lowerBound, scene.upperBound, scene.h)
 bondSearch.init()
 label.from_numpy(scene.label)
+radius.from_numpy(scene.radius)
 position.from_numpy(np.delete(scene.position, -1, axis=1))
 bondSearch.updateCells(position)
 
@@ -43,6 +46,7 @@ def computeBonds():
         li = label[i]
         if li == scene.FLUID:
             pi = position[i]
+            ri = radius[i]
             cell = bondSearch.getCell(pi)
             cnt = 0
             for offs in ti.static(ti.grouped(ti.ndrange((-1, 2), (-1, 2)))):
@@ -53,7 +57,9 @@ def computeBonds():
                         lj = label[j]
                         if lj != scene.FLUID: continue
                         pj = position[j]
-                        if i != j and (pi - pj).norm() < scene.h:
+                        rj = radius[j]
+                        # if i != j and (pi - pj).norm() < scene.h:
+                        if i != j and (pi - pj).norm() < (ri + rj) * 1.1:
                             bondsIdx[i, cnt] = j
                             cnt += 1
             bondsNum[i] = cnt
