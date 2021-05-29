@@ -45,9 +45,10 @@ G = csr_matrix((data,solver.indices,solver.inclusive),shape=(solver.N,solver.N))
 L = csgraph.laplacian(G)
 vals, _ = eigsh(L, k=1)
 M = vals[0]
+print('M : ', M)
 
 if SOLVER_NAME == 'bdem':
-    scene.cfl = 0.05
+    scene.cfl = 0.5
     solver = SolverBdem2(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
     scene.cfl = 0.2
@@ -68,7 +69,7 @@ solver.init()
 
 """ RUN SIMULATION """
 gui = ti.GUI('demo', (WINDOW_SIZE, WINDOW_SIZE), background_color=0xFFFFFF)
-k = np.max([scene.kc, solver.c * scene.rMax * M * M])
+k = np.max([scene.kc, solver.kn * M])
 print('Stiffness : ', k)
 dt = np.sqrt(0.5 * scene.mMin / k) * scene.cfl
 print('Sub Timestep : ', dt)

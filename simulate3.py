@@ -15,7 +15,7 @@ from solver_mpm3 import SolverMpm3
 from solver_peridynamics3 import SolverPeridynamics3
 
 #ti.init(debug=True, log_level=ti.TRACE)
-ti.init(arch=ti.gpu)
+# ti.init(arch=ti.gpu)
 
 SCENE_FOLDER = 'scene3'
 SCENE_NAME = sys.argv[1]
@@ -43,9 +43,11 @@ G = csr_matrix((data,solver.indices,solver.inclusive),shape=(solver.N,solver.N))
 L = csgraph.laplacian(G)
 vals, _ = eigsh(L, k=1)
 M = vals[0]
+print('M : ', M)
+sys.exit()
 
 if SOLVER_NAME == 'bdem':
-    scene.cfl = 0.2
+    scene.cfl = 0.5
     solver = SolverBdem3(scene, neighborSearch)
 elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)
@@ -112,7 +114,7 @@ solver.init()
 
 """ RUN SIMULATION """
 gui = ti.GUI('demo', (WINDOW_SIZE, WINDOW_SIZE), background_color=0xFFFFFF)
-k = np.max([scene.kc, scene.kn * scene.rMax * M * M])
+k = np.max([scene.kc, scene.kn * scene.rMax * np.pi / 2.0 * M])
 # k = np.max([scene.kc, scene.kn * scene.rMax])
 print('Stiffness : ', k)
 dt = np.sqrt(0.5 * scene.mMin / k) * scene.cfl

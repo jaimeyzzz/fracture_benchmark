@@ -46,7 +46,6 @@ class Scene:
         self.cfl = data['cfl']
         self.fps = data['fps']
         self.gammac = data['dampingRatio']
-        self.gammag = data['globalDampingRatio']
         self.rho = data['density']
         # bond
         self.range = data['bondRange']

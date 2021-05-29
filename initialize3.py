@@ -5,7 +5,7 @@ import taichi as ti
 from neighbor_search3 import NeighborSearch3
 from scene import Scene
 
-ti.init(arch=ti.gpu)
+# ti.init(arch=ti.gpu)
 
 SCENE_FOLDER = 'scene3'
 SCENE_NAME = sys.argv[1]

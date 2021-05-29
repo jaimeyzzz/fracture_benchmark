@@ -334,7 +334,6 @@ class SolverBdem3(SolverBase3):
         self.load.fill(0)
         self.computeCollision(dt)
         self.computeGravity(dt)
-        self.computeLocalDamping(dt)
         # self.computeBoundary(dt)
 
         self.updateVelocity(dt)

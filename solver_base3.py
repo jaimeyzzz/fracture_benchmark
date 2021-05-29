@@ -106,21 +106,6 @@ class SolverBase3:
             if li == self.scene.FLUID:
                 mi = self.mass[i]
                 self.force[i] += self.gravity[0] * mi
-    @ti.kernel
-    def computeLocalDamping(self, dt: ti.f32):
-        for i in self.position:
-            li = self.label[i]
-            if li == self.scene.FLUID:
-                signV = ti.Vector([1.0,1.0,1.0])
-                signW = ti.Vector([1.0,1.0,1.0])
-                for j in ti.static(range(3)):
-                    if self.velocity[i][j] < 0.0:
-                        signV[j] = -1.0
-                    if self.angularVelocity[i][j] < 0.0:
-                        signW[j] = -1.0
-                self.force[i] -= self.scene.gammag * abs(self.force[i]) * signV
-                self.torsion[i] -= self.scene.gammag * abs(self.torsion[i]) * signW
-
                 
     @ti.kernel
     def updatePosition(self, dt: ti.f32):
