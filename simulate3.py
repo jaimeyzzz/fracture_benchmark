@@ -15,7 +15,7 @@ from solver_mpm3 import SolverMpm3
 from solver_peridynamics3 import SolverPeridynamics3
 
 #ti.init(debug=True, log_level=ti.TRACE)
-# ti.init(arch=ti.gpu)
+ti.init(arch=ti.gpu)
 
 SCENE_FOLDER = 'scene3'
 SCENE_NAME = sys.argv[1]
@@ -29,7 +29,7 @@ outputDir = 'output/data/{}_{}3/'.format(SCENE_NAME, SOLVER_NAME)
 try:
     os.mkdir(outputDir)
 except OSError as error:
-    print(error)   
+    print(error)
 
 neighborSearch = NeighborSearch3(scene.lowerBound, scene.upperBound, scene.r * 2.0)
 solver = SolverBase3(scene, neighborSearch)
@@ -44,7 +44,6 @@ L = csgraph.laplacian(G)
 vals, _ = eigsh(L, k=1)
 M = vals[0]
 print('M : ', M)
-sys.exit()
 
 if SOLVER_NAME == 'bdem':
     scene.cfl = 0.5
@@ -52,10 +51,8 @@ if SOLVER_NAME == 'bdem':
 elif SOLVER_NAME == 'dem':
     solver = SolverDem3(scene, neighborSearch)
 elif SOLVER_NAME == 'mass_spring':
-    scene.kn /= 10.0
     solver = SolverMassSpring3(scene, neighborSearch)
 elif SOLVER_NAME == 'peridynamics':
-    scene.kn /= 100.0
     solver = SolverPeridynamics3(scene, neighborSearch)
 elif SOLVER_NAME == 'mpm':
     scene.cfl = 0.2
@@ -115,7 +112,6 @@ solver.init()
 """ RUN SIMULATION """
 gui = ti.GUI('demo', (WINDOW_SIZE, WINDOW_SIZE), background_color=0xFFFFFF)
 k = np.max([scene.kc, scene.kn * scene.rMax * np.pi / 2.0 * M])
-# k = np.max([scene.kc, scene.kn * scene.rMax])
 print('Stiffness : ', k)
 dt = np.sqrt(0.5 * scene.mMin / k) * scene.cfl
 print('Sub Timestep : ', dt)
