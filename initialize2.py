@@ -5,6 +5,8 @@ import taichi as ti
 from neighbor_search2 import NeighborSearch2
 from scene import Scene
 
+ti.init(arch=ti.cpu)
+
 SCENE_FOLDER = 'scene2'
 SCENE_NAME = sys.argv[1]
 SOLVER_NAME = sys.argv[2]
@@ -38,6 +40,7 @@ label.from_numpy(scene.label)
 radius.from_numpy(scene.radius)
 position.from_numpy(np.delete(scene.position, -1, axis=1))
 bondSearch.updateCells(position)
+
 
 # COMPUTE BONDS
 @ti.kernel

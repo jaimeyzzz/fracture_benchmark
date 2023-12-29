@@ -267,15 +267,15 @@ class SolverMpm2(SolverBase2):
 
         # self.deleteParticles(dt)
 
-        self.updatePosition(dt)
+        # self.updatePosition(dt)
         # self.updateNeighbors()
         self.load.fill(0)
 
         self.particleToGrid(dt)
         self.computeExternal(dt)
-        self.solvePhaseNaive(dt)
+        # self.solvePhaseNaive(dt)
         self.gridToParticle(dt)
-        self.computeCollision(dt)
+        # self.computeCollision(dt)
         # self.computeGravity(dt)
         # self.updateVelocity(dt)
 

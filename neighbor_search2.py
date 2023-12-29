@@ -57,5 +57,5 @@ class NeighborSearch2:
             pi = self.position[i]
             cell = self.getCell(pi)
             if self.isCellInRange(cell): 
-                idx = self.cellsNum[cell].atomic_add(1)
+                idx = ti.atomic_add(self.cellsNum[cell], 1)
                 self.cells[cell, idx] = i
